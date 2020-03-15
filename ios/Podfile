@@ -1,0 +1,27 @@
+# Uncomment the next line to define a global platform for your project
+# platform :ios, '9.0'
+
+target 'TotoML' do
+  # Uncomment the next line if you're using Swift or would like to use dynamic frameworks
+  # use_frameworks!
+
+  # Pods for TotoML
+  pod 'GoogleSignIn', '~> 4.4.0'
+
+  target 'TotoML-tvOSTests' do
+    inherit! :search_paths
+    # Pods for testing
+  end
+
+  target 'TotoMLTests' do
+    inherit! :search_paths
+    # Pods for testing
+  end
+
+end
+
+target 'TotoML-tvOS' do
+  # Uncomment the next line if you're using Swift or would like to use dynamic frameworks
+  # use_frameworks!
+
+end
