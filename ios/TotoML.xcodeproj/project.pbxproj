@@ -40,6 +40,7 @@
 		3794DDB0241D40C5002DFC5E /* libRNGoogleSignin.a in Frameworks */ = {isa = PBXBuildFile; fileRef = 3794DDA9241D4081002DFC5E /* libRNGoogleSignin.a */; };
 		37A5F3C0241E346900F339DD /* GoogleService-Info.plist in Resources */ = {isa = PBXBuildFile; fileRef = 37A5F399241E346900F339DD /* GoogleService-Info.plist */; };
 		37A5F3CA241E8D2600F339DD /* libART.a in Frameworks */ = {isa = PBXBuildFile; fileRef = 37A5F3C7241E8CF800F339DD /* libART.a */; };
+		37A5F3CC241EAFFF00F339DD /* iTunesArtwork@1x.png in Resources */ = {isa = PBXBuildFile; fileRef = 37A5F3CB241EAFFF00F339DD /* iTunesArtwork@1x.png */; };
 		7D9F4DB0510CE5868430BCBC /* libPods-TotoML-tvOSTests.a in Frameworks */ = {isa = PBXBuildFile; fileRef = F575630CE2743834E466F02D /* libPods-TotoML-tvOSTests.a */; };
 		832341BD1AAA6AB300B99B32 /* libRCTText.a in Frameworks */ = {isa = PBXBuildFile; fileRef = 832341B51AAA6A8300B99B32 /* libRCTText.a */; };
 		ADBDB9381DFEBF1600ED6528 /* libRCTBlob.a in Frameworks */ = {isa = PBXBuildFile; fileRef = ADBDB9271DFEBF0700ED6528 /* libRCTBlob.a */; };
@@ -373,6 +374,7 @@
 		31417CD2DF7E6EB6F69B7CBB /* Pods-TotoML.release.xcconfig */ = {isa = PBXFileReference; includeInIndex = 1; lastKnownFileType = text.xcconfig; name = "Pods-TotoML.release.xcconfig"; path = "Pods/Target Support Files/Pods-TotoML/Pods-TotoML.release.xcconfig"; sourceTree = "<group>"; };
 		37A5F399241E346900F339DD /* GoogleService-Info.plist */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = text.plist.xml; path = "GoogleService-Info.plist"; sourceTree = "<group>"; };
 		37A5F3C1241E8CF800F339DD /* ART.xcodeproj */ = {isa = PBXFileReference; lastKnownFileType = "wrapper.pb-project"; name = ART.xcodeproj; path = "../node_modules/react-native/Libraries/ART/ART.xcodeproj"; sourceTree = "<group>"; };
+		37A5F3CB241EAFFF00F339DD /* iTunesArtwork@1x.png */ = {isa = PBXFileReference; lastKnownFileType = image.png; path = "iTunesArtwork@1x.png"; sourceTree = "<group>"; };
 		52CFF7F10EEBC9996BB681E3 /* libPods-TotoML-tvOS.a */ = {isa = PBXFileReference; explicitFileType = archive.ar; includeInIndex = 0; path = "libPods-TotoML-tvOS.a"; sourceTree = BUILT_PRODUCTS_DIR; };
 		55B03B0FF88DC6E48184622D /* libPods-TotoMLTests.a */ = {isa = PBXFileReference; explicitFileType = archive.ar; includeInIndex = 0; path = "libPods-TotoMLTests.a"; sourceTree = BUILT_PRODUCTS_DIR; };
 		59CBAD692D9364115DCA0AAE /* Pods-TotoMLTests.release.xcconfig */ = {isa = PBXFileReference; includeInIndex = 1; lastKnownFileType = text.xcconfig; name = "Pods-TotoMLTests.release.xcconfig"; path = "Pods/Target Support Files/Pods-TotoMLTests/Pods-TotoMLTests.release.xcconfig"; sourceTree = "<group>"; };
@@ -560,6 +562,7 @@
 				13B07FB61A68108700A75B9A /* Info.plist */,
 				13B07FB11A68108700A75B9A /* LaunchScreen.xib */,
 				13B07FB71A68108700A75B9A /* main.m */,
+				37A5F3CB241EAFFF00F339DD /* iTunesArtwork@1x.png */,
 			);
 			name = TotoML;
 			sourceTree = "<group>";
@@ -802,6 +805,9 @@
 					00E356ED1AD99517003FC87E = {
 						CreatedOnToolsVersion = 6.2;
 						TestTargetID = 13B07F861A680F5B00A75B9A;
+					};
+					13B07F861A680F5B00A75B9A = {
+						DevelopmentTeam = 726YTZXNR7;
 					};
 					2D02E47A1E0B4A5D006451C7 = {
 						CreatedOnToolsVersion = 8.2.1;
@@ -1190,6 +1196,7 @@
 			files = (
 				13B07FBF1A68108700A75B9A /* Images.xcassets in Resources */,
 				13B07FBD1A68108700A75B9A /* LaunchScreen.xib in Resources */,
+				37A5F3CC241EAFFF00F339DD /* iTunesArtwork@1x.png in Resources */,
 				37A5F3C0241E346900F339DD /* GoogleService-Info.plist in Resources */,
 			);
 			runOnlyForDeploymentPostprocessing = 0;
@@ -1459,6 +1466,8 @@
 				ASSETCATALOG_COMPILER_APPICON_NAME = AppIcon;
 				CURRENT_PROJECT_VERSION = 1;
 				DEAD_CODE_STRIPPING = NO;
+				DEVELOPMENT_TEAM = 726YTZXNR7;
+				ENABLE_BITCODE = NO;
 				HEADER_SEARCH_PATHS = (
 					"$(inherited)",
 					"$(SRCROOT)/../node_modules/react-native-google-signin/ios/RNGoogleSignin",
@@ -1482,6 +1491,8 @@
 			buildSettings = {
 				ASSETCATALOG_COMPILER_APPICON_NAME = AppIcon;
 				CURRENT_PROJECT_VERSION = 1;
+				DEVELOPMENT_TEAM = 726YTZXNR7;
+				ENABLE_BITCODE = NO;
 				HEADER_SEARCH_PATHS = (
 					"$(inherited)",
 					"$(SRCROOT)/../node_modules/react-native-google-signin/ios/RNGoogleSignin",
