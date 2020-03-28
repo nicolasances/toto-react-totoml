@@ -31,18 +31,18 @@ const styles = StyleSheet.create({
         flexDirection: "column",
         justifyContent: 'center',
         alignItems: 'center',
-        width: 72, 
-        height: 72,
-        borderRadius: 36,
+        width: 96, 
+        height: 96,
+        borderRadius: 48,
         borderWidth: 3,
         borderColor: TRC.TotoTheme.theme.COLOR_THEME_LIGHT
     }, 
     version: {
-        fontSize: 20,
+        fontSize: 24,
         color: TRC.TotoTheme.theme.COLOR_TEXT
     }, 
     label: {
-        fontSize: 8,
+        fontSize: 10,
         color: TRC.TotoTheme.theme.COLOR_TEXT
     }
 })

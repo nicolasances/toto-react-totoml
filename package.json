@@ -13,6 +13,7 @@
     "react": "16.8.3",
     "react-native": "0.59.2",
     "react-native-google-signin": "^1.2.2",
+    "react-native-swiper": "^1.5.14",
     "react-navigation": "^2.18.3",
     "toto-react-components": "^1.20.0"
   },

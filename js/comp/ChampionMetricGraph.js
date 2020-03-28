@@ -1,3 +1,4 @@
+import moment from 'moment';
 import React, { Component } from 'react';
 import { Text, View, StyleSheet, Image} from 'react-native';
 import TRC from 'toto-react-components';
@@ -29,6 +30,7 @@ export default class ChampionMetricGraph extends Component {
         this.loadMetrics = this.loadMetrics.bind(this);
         this.prepareData = this.prepareData.bind(this);
         this.valueLabelTransform = this.valueLabelTransform.bind(this);
+        this.xLabel = this.xLabel.bind(this);
     }
 
     componentDidMount() {
@@ -42,59 +44,84 @@ export default class ChampionMetricGraph extends Component {
     loadMetrics() {
 
         new TotoMLRegistryAPI().getChampionHistoricalMetrics(this.props.modelName).then((data) => {
-            this.prepareData(data);
+
+            if (!data && !data.metrics) return;
+
+            this.setState({
+                historicalMetrics: data.metrics
+            }, () => {
+                new TotoMLRegistryAPI().getRetrainedModel(this.props.modelName).then((data) => {
+
+                    if (data && data.metrics) {
+                        
+                        this.setState({
+                            retrainedModelMetrics: data.metrics
+                        }, this.prepareData)
+                    }
+                })
+            })
         })
     }
 
     /**
      * Prepares the data for the line chart visualization
      */
-    prepareData(data) {
+    prepareData() {
 
-        if (!data || !data.metrics || data.metrics.length == 0) return;
+        if (!this.state || !this.state.historicalMetrics || this.state.historicalMetrics.length == 0) return;
 
-        metrics = []
+        let metrics = []
 
-        days = data.metrics;
-        numDays = data.metrics.length;
-        numMetrics = data.metrics[0].metrics.length;
+        let days = this.state.historicalMetrics;
+        let numDays = this.state.historicalMetrics.length;
+        let numMetrics = this.state.historicalMetrics[0].metrics.length;
 
-        // For each type of metric, create the data for a single line
+        let targetMetric = this.props.metricName;
+
+        let metricDays = [];
+
+        // For the selected type of metric, create the data for a single line
         // because the lines are per metric type 
         for (var m = 0; m < numMetrics; m++) {
 
-            metricDays = []
+            if (days[0].metrics[m].name != targetMetric) continue;
 
             for (var d = 0; d < numDays; d++) {
 
                 metricDays.push({
                     x: d, 
-                    y: data.metrics[d].metrics[m].value * 100
+                    y: days[d].metrics[m].value * 100
                 })
-
             }
-
-            metrics.push(metricDays);
+        }
+        
+        // Now let's define the line for the retrained model value
+        let yLines = []
+        if (this.state.retrainedModelMetrics) {
+            
+            for (var m = 0 ; m < this.state.retrainedModelMetrics.length; m++) {
+                
+                rmMetric = this.state.retrainedModelMetrics[m];
+                
+                if (rmMetric.name != this.props.metricName) continue;
+                
+                yLines.push(rmMetric.value * 100)
+            }
         }
 
+        let minYValue = d3.array.min(metricDays, (d) => {return d.y})
+        let maxYValue = d3.array.max(metricDays, (d) => {return d.y})
 
-        // Define the minimum y value for the visualization: 
-        // We'll define the minimum y as the actual min value found in the array, minus the delta between the max and the min (capped to 0)
-        minYMetrics = d3.array.min(metrics, (d) => {return d3.array.min(d, (di) => {return di.y})});
-        minYMetrics -= d3.array.max(metrics, (d) => {return d3.array.max(d, (di) => {return di.y})}) - minYMetrics;
-        if (minYMetrics < 0) minYMetrics = 0;
+        if (minYValue > yLines[0]) minYValue = yLines[0];
+        if (maxYValue < yLines[0]) maxYValue = yLines[0];
 
-        // Define the colors of each line
-        colors = []
-        for (var m = 0; m < metrics.length; m++) {
-            if (m < lineColors.length) colors.push(lineColors[m]);
-            else colors.push(lineColors[0]);
-        }
+        let delta = maxYValue - minYValue;
 
         this.setState({
-            metrics: metrics, 
-            minYMetrics: minYMetrics,
-            lineColors: colors
+            metrics: metricDays, 
+            minYValue: minYValue - delta/4,
+            maxYValue: maxYValue + delta/4,
+            yLines: yLines
         })
     }
 
@@ -105,14 +132,20 @@ export default class ChampionMetricGraph extends Component {
      */
     valueLabelTransform(value, i) {
 
-        let superMin = d3.array.min(metrics, (d) => {return d3.array.min(d, (di) => {return di.y})});
-        let superMax = d3.array.max(metrics, (d) => {return d3.array.max(d, (di) => {return di.y})});
-
-        if (value == superMin || value == superMax) {
-            return value.toFixed(2);
-        }
+        if (i == this.state.metrics.length - 1) return value.toFixed(2);
 
         return '';
+    }
+
+    /**
+     * Formats the x label
+     * @param {string} value in this case the value is an index
+     */
+    xLabel(value) {
+
+        let date = this.state.historicalMetrics[value].date;
+
+        return moment(date, 'YYYYMMDD').format('DD MMM');
     }
 
     render() {
@@ -120,11 +153,24 @@ export default class ChampionMetricGraph extends Component {
             <View style={styles.container}>
 
                 <TotoLineChart 
-                    dataMultiLines={this.state.metrics}
-                    minYValue={this.state.minYMetrics}
+                    data={this.state.metrics}
                     valueLabelTransform={this.valueLabelTransform}
                     curveCardinal={false}
-                    multiLinesColors={this.state.lineColors}
+                    minYValue={this.state.minYValue}
+                    maxYValue={this.state.maxYValue}
+                    yLines={this.state.yLines}
+                    yLinesColor={TRC.TotoTheme.theme.COLOR_THEME}
+                    yLinesNumberLocale='en'
+                    yLinesLabelColor={TRC.TotoTheme.theme.COLOR_TEXT_LIGHT}
+                    yLinesLabelFontSize={10}
+                    yLinesMarginHorizontal={12}
+                    yLinesDashed={true}
+                    valuePointsBackground={TRC.TotoTheme.theme.COLOR_THEME_DARK}
+                    showValuePoints={this.state.metrics && this.state.metrics.length < 10}
+                    showFirstAndLastVP={true}
+                    xAxisTransform={this.xLabel}
+                    xLabelPosition='top'
+                    xLabelLines={true}
                     />
                 
             </View>
@@ -136,6 +182,6 @@ const styles = StyleSheet.create({
     container: {
         flex: 1,
         flexDirection: 'column',
-        paddingTop: 32
+        paddingTop: 12,
     },
 })

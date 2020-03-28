@@ -14,10 +14,13 @@ Key functionalities provided by the app, with regards to Registry:
 
 * **Key actions on the Model**: key actions that can be performed on the Model are: 
     * **Promote** the Retrained Model to replace the Champion Model
+    * **Retrain** the model. This will force a retraining of the model. Note that that doesn't replace normal scheduled retraining (if scheduled)
 
-* **Last Retraining**: when was the model last retrained? 
+* **Last Retraining & Scoring**: when was the model last retrained?  when was the model last scored?
 
 * **Detailed view of the Model**: the detailed view could provide all the detailed information on the Champion Model and the Retrained Model.
+
+* **Description of the model**: user description of the model, can be added by the user through the app.
 
 ## Future ideas:
 * Tracking **metrics on the retraining process**: how long did the training take? How is that measurement changing over time? 

@@ -28,10 +28,15 @@ const d3 = {scale, shape, array, path};
  *                            [ [data line 1], ..., [data line n]]
  * - multiLinesColors       : the colors of the lines, in case of multi lines
  * - minYValue              : (optioanl) the y value to consider as a minimum (to avoid flat-looking lines)
+ * - maxYValue              : (optional) the y value to consider as the maximum
  * - valueLabelTransform    : (optional) a function (value, i) => {transforms the value to be displayed on the bar (top part). i is the index of that value}
  * - xAxisTransform         : (optional) a function to be called with the x axis value to generate a label to put on the bar (bottom part)
+ *                            NOTE that if showFirstAndLastVP is set to true, this will only show the first and last x labels
+ * - xLabelPosition         : (optional, default 'bottom'). If set to 'top', the x labels will be positioned on the top of the graph
+ * - xLabelLines            : (optional, default false). If true, will draw vertical lines (along the y axis) for each label
  * - moreSpaceForXLabels    : (optional, default false) pass true if the x axis label needs extra space (e.g. ends up in two lines)
  * - showValuePoints        : (optional, default true), shows the value points (circles)
+ * - showFirstAndLastVP     : (optioanl, default true), shows the first and last value points (circles)
  * - valuePointsBackground  : (optional, default THEME color), defines the background color of the value points (Circles)
  * - valuePointsSize        : (optional, default 6), defines the radius of the circle value points
  * - curveCardinal          : (optional, default true), shows the curve as a curve cardinal. If set to false it will use the basic curve (curveLinear)
@@ -41,6 +46,10 @@ const d3 = {scale, shape, array, path};
  *                            if passed, it's an [y1, y2, y3, ...]
  *                            each value will correspond to a horizontal line
  * - yLinesNumberLocale     : (optional) the locale to use to format the number with toLocaleString('<locale>') ... e,g. 'it'
+ * - yLinesColor            : (optional) the color of the y lines
+ * - yLinesLabelColor       : (optional) the color of the label of the ylines
+ * - yLinesFullWidth        : (optional, default true) set false if the horizontal line shouldn't fill the whole width of the screen
+ * - yLinesDashed           : (optional, default false). If true will show the y lines as dashed lines
  * - valueLabelColor        : (optional, default COLOR_TEXT) the color of the value labels
  */
 export default class TotoLineChart extends Component {
@@ -65,7 +74,6 @@ export default class TotoLineChart extends Component {
     }
 
     // Default properties
-    this.showValuePoints = this.props.showValuePoints == null ? true : this.props.showValuePoints;
     this.curveCardinal = this.props.curveCardinal == null ? true : this.props.curveCardinal;
     this.graphMargin = (this.props.leaveMargins == null || this.props.leaveMargins) ? 24 : -2;
     this.areaColor = this.props.areaColor;
@@ -95,8 +103,14 @@ export default class TotoLineChart extends Component {
    * Receives updated properties
    */
   initGraph() {
-
+    
     if ((this.props.data == null || this.props.data.length == 0) && (this.props.dataMultiLines == null || this.props.dataMultiLines.length == 0)) return;
+
+    this.showValuePoints = this.props.showValuePoints == null ? true : this.props.showValuePoints;
+    this.showFirstAndLastVP = this.props.showFirstAndLastVP == null ? true : this.props.showFirstAndLastVP;
+    this.xLabelPosition = this.props.xLabelPosition == null ? 'bottom' : this.props.xLabelPosition;
+    this.xLabelLines = this.props.xLabelLines == null ? false : this.props.xLabelLines;
+    this.yLinesDashed = this.props.yLinesDashed == null ? false : this.props.yLinesDashed;
 
     // SIZES AND Padding of elements
     this.xLabelSize = 12;
@@ -106,7 +120,7 @@ export default class TotoLineChart extends Component {
 
     // Define the vertical and horizontal margins of the graph, in order to fit the circles
     let paddingV = 0, paddingH = 0;
-    if (this.showValuePoints) {
+    if (this.showValuePoints || this.showFirstAndLastVP) {
       paddingV = this.valuePointsSize / 2 + 2 * this.genericShapeStrokeWidth;
       paddingH = this.valuePointsSize + 2 * this.genericShapeStrokeWidth;
     }
@@ -116,12 +130,13 @@ export default class TotoLineChart extends Component {
     // Define the min and max x values
     let xMin = this.props.data ? d3.array.min(this.props.data, (d) => {return d.x}) : d3.array.min(this.props.dataMultiLines, (d) => {return d3.array.min(d, (di) => {return di.x})});
     let xMax = this.props.data ? d3.array.max(this.props.data, (d) => {return d.x}) : d3.array.max(this.props.dataMultiLines, (d) => {return d3.array.max(d, (di) => {return di.x})});
-
+    
     // Define the min and max y values
     // let yMin = d3.array.min(this.props.data, (d) => {return d.y});
     let yMin = 0;
     let yMax = this.props.data ? d3.array.max(this.props.data, (d) => {return d.y}) : d3.array.max(this.props.dataMultiLines, (d) => {return d3.array.max(d, (di) => {return di.y})});
     if (this.props.minYValue) yMin = this.props.minYValue;
+    if (this.props.maxYValue) yMax = this.props.maxYValue;
 
     // Update the scales
     this.x = d3.scale.scaleLinear().range([this.graphMargin + paddingH, this.state.width - this.graphMargin - paddingH]).domain([xMin, xMax]);
@@ -138,15 +153,30 @@ export default class TotoLineChart extends Component {
 
     let shapes = [];
 
+    // Define the color of the line
+    let lineColor = TRC.TotoTheme.theme.COLOR_THEME_LIGHT + 50;
+    if (this.props.yLinesColor) lineColor = this.props.yLinesColor;
+
+    // Width of the line
+    let lineStart = 0;
+    let lineEnd = this.state.width;
+    if (this.props.yLinesFullWidth == false) {
+      lineStart = 24
+      lineEnd -= 24
+    }
+
     for (var i = 0; i < ylines.length; i++) {
 
       let line = d3.shape.line()
           .x((d) => {return d.x})
           .y((d) => {return d.y});
 
-      let path = line([{x: 0, y: this.y(ylines[i])}, {x: this.state.width, y: this.y(ylines[i])}]);
+      let path = line([{x: lineStart, y: this.y(ylines[i])}, {x: lineEnd, y: this.y(ylines[i])}]);
 
-      shapes.push(this.createShape(path, TRC.TotoTheme.theme.COLOR_THEME_LIGHT + 50, null, 1));
+      let dashed;
+      if (this.yLinesDashed) dashed = [5,5];
+
+      shapes.push(this.createShape(path, lineColor, null, dashed));
     }
 
     return shapes;
@@ -163,6 +193,14 @@ export default class TotoLineChart extends Component {
 
     let shapes = [];
 
+    // Color
+    let color = {color: TRC.TotoTheme.theme.COLOR_THEME_LIGHT}
+    if (this.props.yLinesLabelColor) color = {color: this.props.yLinesLabelColor}
+
+    // Font size
+    let fontSize = {fontSize: 10}
+    if (this.props.yLinesLabelFontSize) fontSize = {fontSize: this.props.yLinesLabelFontSize}
+
     for (var i = 0; i < ylines.length; i++) {
 
       let key = 'Label-YLine-' + Math.random();
@@ -173,8 +211,8 @@ export default class TotoLineChart extends Component {
 
       // Create the text element
       let element = (
-        <View key={key} style={{position: 'absolute', left: 6, top: this.y(ylines[i]) + 3}}>
-          <Text style={styles.yAxisLabel}>{value}</Text>
+        <View key={key} style={{position: 'absolute', left: 6, top: this.y(ylines[i]) + 6}}>
+          <Text style={[styles.yAxisLabel, color]}>{value}</Text>
         </View>
       );
 
@@ -221,12 +259,12 @@ export default class TotoLineChart extends Component {
   /**
    * Returns a shape drawing the provided path
    */
-  createShape(path, color, fillColor) {
+  createShape(path, color, fillColor, strokeDash) {
 
     let key = 'TotoLineChartShape-' + Math.random();
 
     return (
-      <Shape key={key} d={path} strokeWidth={this.genericShapeStrokeWidth} stroke={color} fill={fillColor} />
+      <Shape key={key} d={path} strokeDash={strokeDash} strokeWidth={this.genericShapeStrokeWidth} stroke={color} fill={fillColor} />
     )
   }
 
@@ -294,6 +332,11 @@ export default class TotoLineChart extends Component {
     // For each point, create a bar
     for (var i = 0; i < data.length; i++) {
 
+      // If you only want to see the first and last VP, then the same applies for the labels
+      if (this.showFirstAndLastVP) {
+        if (i != 0 && i != data.length - 1) continue;
+      }
+
       // The single datum
       let value = data[i].x;
 
@@ -301,14 +344,29 @@ export default class TotoLineChart extends Component {
       value = this.props.xAxisTransform(value);
 
       // Positioning of the text
-      let x = this.x(data[i].x) - 10;
+      let x = this.x(data[i].x);
       let key = 'Label-X-' + Math.random();
+      
+      // Define the Y position
+      let y = this.state.height - this.xLabelBottomPadding - this.xLabelSize;
+      if (this.xLabelPosition == 'top') y = this.xLabelBottomPadding + this.xLabelSize;
 
       // Create the text element, only if there's a value to display
       if (value != null) {
 
+        style = {
+          position: 'absolute', 
+          left: x - (this.showFirstAndLastVP ? 20 : 10), 
+          top: y,
+          alignItems: 'center',
+          width: this.showFirstAndLastVP ? 40 : 20
+        }
+
+        // Define the label width
+        if (!this.showFirstAndLastVP) style.width = 20
+
         let element = (
-          <View key={key} style={{position: 'absolute', left: x, top: this.state.height - this.xLabelBottomPadding - this.xLabelSize, width: 20, alignItems: 'center'}}>
+          <View key={key} style={style}>
             <Text style={styles.xAxisLabel}>{value}</Text>
           </View>
         );
@@ -318,6 +376,48 @@ export default class TotoLineChart extends Component {
     }
 
     return labels;
+  }
+
+  /**
+   * Creates the x vertical lines
+   */
+  createXLines(data) {
+
+    if (data == null) return;
+    if (this.props.xAxisTransform == null) return;
+    if (!this.xLabelLines) return;
+
+    // Define the color of the line
+    let lineColor = TRC.TotoTheme.theme.COLOR_THEME_LIGHT + 50;
+
+    let lines = []
+
+    // For each point, create a vertical line
+    for (var i = 0; i < data.length; i++) {
+
+      // If you only want to see the first and last VP, then the same applies for the labels
+      if (this.showFirstAndLastVP) {
+        if (i != 0 && i != data.length - 1) continue;
+      }
+
+      let datum = data[i];
+
+      // Define the start and end of the line
+      let lineStart = 0;
+      let lineEnd = this.y(datum.y);
+
+      if (this.xLabelPosition == 'top') lineStart += this.xLabelBottomPadding + this.xLabelSize*2.5;
+  
+      let line = d3.shape.line()
+          .x((d) => {return d.x})
+          .y((d) => {return d.y});
+
+      let path = line([{x: this.x(datum.x), y: lineStart}, {x: this.x(datum.x), y: lineEnd}]);
+
+      lines.push(this.createShape(path, lineColor, null, [5,5]));
+    }
+  
+    return lines;
   }
 
   /**
@@ -388,6 +488,10 @@ export default class TotoLineChart extends Component {
 
     for (var i = 0; i < data.length; i++) {
 
+      if (this.showFirstAndLastVP) {
+        if (i != 0 && i != data.length - 1) continue;
+      }
+
       let datum = data[i];
 
       let circle = this.circlePath(this.x(datum.x), this.y(datum.y), this.valuePointsSize);
@@ -413,12 +517,14 @@ export default class TotoLineChart extends Component {
     let circles;
     let labels;
     let xLabels;
+    let xLines;
 
     if (this.props.data) {
       line = this.areaColor ? this.createArea(this.props.data) : this.createLine(this.props.data);
-      circles = this.showValuePoints ? this.createCircles(this.props.data) : null;
+      circles = this.showValuePoints || this.showFirstAndLastVP ? this.createCircles(this.props.data) : null;
       labels = this.createValueLabels(this.props.data);
       xLabels = this.createXAxisLabels(this.props.data);
+      xLines = this.createXLines(this.props.data);
     }
     else if (this.props.dataMultiLines) {
       
@@ -448,6 +554,7 @@ export default class TotoLineChart extends Component {
         <Surface height={this.state.height} width={this.state.width}>
           {line}
           {multilines}
+          {xLines}
           {ylines}
           {circles}
           {multicircles}
@@ -478,7 +585,5 @@ const styles = StyleSheet.create({
     textAlign: 'center'
   },
   yAxisLabel: {
-    color: TRC.TotoTheme.theme.COLOR_THEME_LIGHT,
-    fontSize: 10,
   },
 });
