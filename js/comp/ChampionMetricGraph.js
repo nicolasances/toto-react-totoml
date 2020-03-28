@@ -165,6 +165,7 @@ export default class ChampionMetricGraph extends Component {
                     yLinesLabelFontSize={10}
                     yLinesMarginHorizontal={12}
                     yLinesDashed={true}
+                    yLinesIcons={[require('TotoML/img/fight.png')]}
                     valuePointsBackground={TRC.TotoTheme.theme.COLOR_THEME_DARK}
                     showValuePoints={this.state.metrics && this.state.metrics.length < 10}
                     showFirstAndLastVP={true}

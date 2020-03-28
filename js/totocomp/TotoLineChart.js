@@ -1,5 +1,5 @@
 import React, {Component} from 'react';
-import {Animated, Easing, View, Text, ART, Dimensions, StyleSheet} from 'react-native';
+import {Animated, Easing, View, Text, ART, Image, StyleSheet} from 'react-native';
 import * as scale from 'd3-scale';
 import * as shape from 'd3-shape';
 import * as array from 'd3-array';
@@ -50,6 +50,7 @@ const d3 = {scale, shape, array, path};
  * - yLinesLabelColor       : (optional) the color of the label of the ylines
  * - yLinesFullWidth        : (optional, default true) set false if the horizontal line shouldn't fill the whole width of the screen
  * - yLinesDashed           : (optional, default false). If true will show the y lines as dashed lines
+ * - yLinesIcons            : (optional, default none). A list of icons to be added for each y line, where the label is (in front of the label)
  * - valueLabelColor        : (optional, default COLOR_TEXT) the color of the value labels
  */
 export default class TotoLineChart extends Component {
@@ -195,7 +196,11 @@ export default class TotoLineChart extends Component {
 
     // Color
     let color = {color: TRC.TotoTheme.theme.COLOR_THEME_LIGHT}
-    if (this.props.yLinesLabelColor) color = {color: this.props.yLinesLabelColor}
+    let tintColor = {tintColor: TRC.TotoTheme.theme.COLOR_THEME_LIGHT}
+    if (this.props.yLinesLabelColor) {
+      color = {color: this.props.yLinesLabelColor}
+      tintColor = {tintColor: this.props.yLinesLabelColor}
+    }
 
     // Font size
     let fontSize = {fontSize: 10}
@@ -209,9 +214,20 @@ export default class TotoLineChart extends Component {
       let value = ylines[i];
       if (this.props.yLinesNumberLocale && ylines[i]) value = ylines[i].toLocaleString(this.props.yLinesNumberLocale);
 
+      // Check if an image needs to be drawn
+      let image;
+      if (this.props.yLinesIcons && this.props.yLinesIcons.length > i) image = (
+        <Image source={this.props.yLinesIcons[i]} style={[styles.yLineImage, tintColor]} />
+      )
+
+      // Top position of the element 
+      let top = this.y(ylines[i]) + 6;
+      if (this.props.yLinesIcons) top += 3;
+
       // Create the text element
       let element = (
-        <View key={key} style={{position: 'absolute', left: 6, top: this.y(ylines[i]) + 6}}>
+        <View key={key} style={{flexDirection: 'row', position: 'absolute', left: 6, top: top}}>
+          {image}
           <Text style={[styles.yAxisLabel, color]}>{value}</Text>
         </View>
       );
@@ -586,4 +602,9 @@ const styles = StyleSheet.create({
   },
   yAxisLabel: {
   },
+  yLineImage: {
+    width: 20, 
+    height: 20,
+    marginRight: 9,
+  }
 });
