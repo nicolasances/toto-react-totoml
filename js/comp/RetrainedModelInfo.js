@@ -14,7 +14,7 @@ export default class RetrainedModelInfo extends Component {
             <View style={styles.container}>
                 <Text style={styles.modelLabel}>Retrained</Text>
                 <Image source={require('TotoML/img/fight.png')} style={styles.modelImage} />
-                <RetrainedDate model={this.props.model} showIcon={false} showLabel={false} />
+                <RetrainedDate modelName={this.props.modelName} showIcon={false} showLabel={false} />
             </View>
         )
     }

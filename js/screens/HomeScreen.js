@@ -59,7 +59,7 @@ export default class HomeScreen extends Component {
    */
   onModelPress(item) {
 
-    this.props.navigation.navigate('ModelDetail', {model: item.item})
+    this.props.navigation.navigate('ModelDetail', {modelName: item.item.name})
 
   }
 

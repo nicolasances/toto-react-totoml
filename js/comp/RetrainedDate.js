@@ -1,10 +1,10 @@
 import moment from 'moment';
 import React, { Component } from 'react';
-import { Text, View, StyleSheet, Image} from 'react-native';
+import { Text, View, StyleSheet, Image } from 'react-native';
 import * as config from '../Config';
 import TRC from 'toto-react-components';
 import TotoMLRegistryAPI from '../services/TotoMLRegistryAPI';
-import {trainingUtil} from '../util/TrainingUtil';
+import { trainingUtil } from '../util/TrainingUtil';
 
 /**
  * Shows the last retrained date
@@ -20,12 +20,13 @@ export default class RetrainedDate extends Component {
         super(props);
 
         this.state = {
-            training: trainingUtil.isModelTraining(this.props.model.name)
+            training: trainingUtil.isModelTraining(this.props.modelName)
         }
 
         this.loadRetrainedModel = this.loadRetrainedModel.bind(this);
         this.onTrainingEnded = this.onTrainingEnded.bind(this);
         this.onTrainingStarted = this.onTrainingStarted.bind(this);
+        this.onPromotionEnded = this.onPromotionEnded.bind(this);
 
     }
 
@@ -36,12 +37,14 @@ export default class RetrainedDate extends Component {
         // Listen to events
         TRC.TotoEventBus.bus.subscribeToEvent(config.EVENTS.trainingStarted, this.onTrainingStarted)
         TRC.TotoEventBus.bus.subscribeToEvent(config.EVENTS.trainingEnded, this.onTrainingEnded)
+        TRC.TotoEventBus.bus.subscribeToEvent(config.EVENTS.promotionEnded, this.onPromotionEnded)
     }
-    
+
     componentWillUnmount() {
         // Remove event listeners
         TRC.TotoEventBus.bus.unsubscribeToEvent(config.EVENTS.trainingStarted, this.onTrainingStarted)
         TRC.TotoEventBus.bus.unsubscribeToEvent(config.EVENTS.trainingEnded, this.onTrainingEnded)
+        TRC.TotoEventBus.bus.unsubscribeToEvent(config.EVENTS.promotionEnded, this.onPromotionEnded)
     }
 
     /**
@@ -49,33 +52,39 @@ export default class RetrainedDate extends Component {
      */
     onTrainingStarted(event) {
 
-        if (event.context.modelName == this.props.model.name) {
+        if (event.context.modelName == this.props.modelName) {
             this.setState({
                 training: true
             })
         }
-    } 
+    }
 
     /**
      * When the training ended for this model
      */
     onTrainingEnded(event) {
 
-        if (event.context.modelName == this.props.model.name) {
+        if (event.context.modelName == this.props.modelName) {
             this.setState({
                 training: false
             })
             this.loadRetrainedModel()
         }
-    } 
+    }
+
+    /**
+     * When the promotion has ended, reload
+     */
+    onPromotionEnded(event) {
+        if (event.context.modelName == this.props.modelName) this.loadRetrainedModel();
+    }
 
     loadRetrainedModel() {
-        new TotoMLRegistryAPI().getRetrainedModel(this.props.model.name).then((data) => {
-            
-            if (!data || !data.modelName) return;
-            
+
+        new TotoMLRegistryAPI().getRetrainedModel(this.props.modelName).then((data) => {
+
             this.setState({
-                retrainedModel: data
+                retrainedModel: data && data.modelName ? data : null
             })
         })
     }
@@ -89,16 +98,18 @@ export default class RetrainedDate extends Component {
         let humanizedDate = '';
         let dateColor = {}
         if (this.state.retrainedModel) {
-            
+
             let retrainedDate;
             if (this.state.retrainedModel.time) retrainedDate = moment(this.state.retrainedModel.date + '' + this.state.retrainedModel.time, 'YYYYMMDDHH:mm');
             else retrainedDate = moment(this.state.retrainedModel.date, 'YYYYMMDD');
-            
+
             humanizedDate = moment.duration(moment().diff(retrainedDate)).humanize() + ' ago';
         }
+        else humanizedDate = 'None';
+
         if (this.state.training) {
             humanizedDate = 'Training now...';
-            dateColor = {color: TRC.TotoTheme.theme.COLOR_ACCENT}
+            dateColor = { color: TRC.TotoTheme.theme.COLOR_ACCENT }
         }
 
         let label;
@@ -128,7 +139,7 @@ export default class RetrainedDate extends Component {
 
 const styles = StyleSheet.create({
     container: {
-        flexDirection: 'row', 
+        flexDirection: 'row',
         justifyContent: 'flex-start',
     },
     imgContainer: {

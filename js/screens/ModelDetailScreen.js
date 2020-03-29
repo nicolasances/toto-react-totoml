@@ -9,6 +9,8 @@ import RetrainedModelInfo from '../comp/RetrainedModelInfo';
 import ChampionModelInfo from '../comp/ChampionModelInfo';
 import Swiper from 'react-native-swiper';
 import {trainingUtil} from '../util/TrainingUtil';
+import {promotionUtil} from '../util/PromotionUtil';
+import ChampionVsRetrainedIcons from '../comp/ChampionVsRetrainedIcons';
 
 export default class ModelDetailScreen extends Component {
 
@@ -18,7 +20,7 @@ export default class ModelDetailScreen extends Component {
     return {
       headerLeft: null,
       headerTitle: <TRC.TotoTitleBar
-                      title={navigation.getParam('model').name}
+                      title={navigation.getParam('modelName')}
                       color={TRC.TotoTheme.theme.COLOR_THEME}
                       titleColor={TRC.TotoTheme.theme.COLOR_TEXT}
                       back={true}
@@ -32,83 +34,78 @@ export default class ModelDetailScreen extends Component {
   constructor(props) {
     super(props);
 
-    model = this.props.navigation.getParam('model');
+    let modelName = this.props.navigation.getParam('modelName');
 
     this.state = {
-      model: model,
+      modelName: modelName,
       currentPage: 0, 
-      training: trainingUtil.isModelTraining(model.name)
+      training: trainingUtil.isModelTraining(modelName),
+      promoting: promotionUtil.isModelPromoting(modelName)
     }
 
     // Binding 
     this.generateMetricsGraphs = this.generateMetricsGraphs.bind(this);
-    this.retrainedOutperformsChampion = this.retrainedOutperformsChampion.bind(this);
     this.retrain = this.retrain.bind(this);
     this.onTrainingEnded = this.onTrainingEnded.bind(this);
     this.onTrainingStarted = this.onTrainingStarted.bind(this);
-    this.onModelPromoted = this.onModelPromoted.bind(this);
+    this.onPromotionStarted = this.onPromotionStarted.bind(this);
+    this.onPromotionEnded = this.onPromotionEnded.bind(this);
     this.promote = this.promote.bind(this);
-    this.reloadModel = this.reloadModel.bind(this);
+    this.reload = this.reload.bind(this);
   }
 
   componentDidMount() {
-    // Load the retrained model
-    new TotoMLRegistryAPI().getRetrainedModel(this.props.navigation.getParam('model').name).then((data) => {
-      this.setState({
-        retrainedModel: data
-      })
-    })
+    // Load the model
+    this.reload();
 
     // Listen to events
     TRC.TotoEventBus.bus.subscribeToEvent(config.EVENTS.trainingStarted, this.onTrainingStarted)
     TRC.TotoEventBus.bus.subscribeToEvent(config.EVENTS.trainingEnded, this.onTrainingEnded)
-    TRC.TotoEventBus.bus.subscribeToEvent(config.EVENTS.modelPromoted, this.onModelPromoted)
+    TRC.TotoEventBus.bus.subscribeToEvent(config.EVENTS.promotionStarted, this.onPromotionStarted)
+    TRC.TotoEventBus.bus.subscribeToEvent(config.EVENTS.promotionEnded, this.onPromotionEnded)
   }
     
   componentWillUnmount() {
       // Remove event listeners
       TRC.TotoEventBus.bus.unsubscribeToEvent(config.EVENTS.trainingStarted, this.onTrainingStarted)
       TRC.TotoEventBus.bus.unsubscribeToEvent(config.EVENTS.trainingEnded, this.onTrainingEnded)
-      TRC.TotoEventBus.bus.unsubscribeToEvent(config.EVENTS.modelPromoted, this.onModelPromoted)
+      TRC.TotoEventBus.bus.unsubscribeToEvent(config.EVENTS.promotionStarted, this.onPromotionStarted)
+      TRC.TotoEventBus.bus.unsubscribeToEvent(config.EVENTS.promotionEnded, this.onPromotionEnded)
   }
 
   onTrainingEnded(event) {
-    if (event.context.modelName == this.state.model.name) this.setState({training: false});
+    if (event.context.modelName == this.state.model.name) {this.setState({training: false}); this.reload(); }
   }
   onTrainingStarted(event) {
-    if (event.context.modelName == this.state.model.name) this.setState({training: true});
+    if (event.context.modelName == this.state.model.name) {this.setState({training: true}); this.reload();}
   }
-  onModelPromoted(event) {
-    if (event.context.modelName == this.state.model.name) this.reloadModel();
+  onPromotionEnded(event) {
+    if (event.context.modelName == this.state.model.name) {this.setState({promoting: false}); this.reload();}
+  }
+  onPromotionStarted(event) {
+    if (event.context.modelName == this.state.model.name) {this.setState({promoting: true}); this.reload();}
   }
   
   /**
-   * Reloads the model
+   * Reloads the model and the retrained model
    */
-  reloadModel() {
-    new TotoMLRegistryAPI().getModel(this.state.model.name).then((data) => {
-      this.setState({model: data})
-    })
+  reload() {
+    new TotoMLRegistryAPI().getModel(this.state.modelName).then((data) => {this.setState({model: data})});
+    new TotoMLRegistryAPI().getRetrainedModel(this.state.modelName).then((data) => {this.setState({retrainedModel: data})});
   }
 
   /**
    * Retrraing the Champion Model
    */
   retrain() {
-    trainingUtil.retrain(this.state.model.name);
+    trainingUtil.retrain(this.state.modelName);
   }
 
   /**
    * Promotes the model
    */
   promote() {
-    
-    new TotoMLRegistryAPI().promoteModel(this.state.model.name).then((data) => {
-      
-      // Publish an event 
-      TRC.TotoEventBus.bus.publishEvent({name: config.EVENTS.modelPromoted, context: {modelName: this.state.model.name}})
-      
-    })
+    promotionUtil.promote(this.state.modelName);
   }
 
   /**
@@ -117,7 +114,7 @@ export default class ModelDetailScreen extends Component {
    */
   generateMetricsGraphs() {
 
-    if (!this.state.model.metrics) return;
+    if (!this.state.model || !this.state.model.metrics) return;
 
     let metricGraphs = []
 
@@ -141,38 +138,11 @@ export default class ModelDetailScreen extends Component {
   }
 
   /**
-   * Checks whether the Retrained Model (if any) outperforms
-   * the Champion Model
-   * ...which means is better at the most metrics
-   */
-  retrainedOutperformsChampion() {
-
-    if (!this.state.retrainedModel || !this.state.retrainedModel.metrics || this.state.retrainedModel.metrics.length == 0) return false;
-    if (!this.state.model.metrics || this.state.model.metrics.length == 0) return false;
-
-    let retrainedCount = 0; 
-    let championCount = 0;
-
-    let champion = this.state.model;
-    let retrained = this.state.retrainedModel;
-
-    for (var i = 0; i < champion.metrics.length; i++) {
-
-      if (champion.metrics[i].value >= retrained.metrics[i].value) championCount++;
-      else retrainedCount++;
-
-    }
-
-    return retrainedCount > championCount;
-
-  }
-
-  /**
    * Tracker for the paging of the metrics (swiper)
    */
   buildPager() {
     
-    if (!this.state.model.metrics || this.state.model.metrics.length == 0) return;
+    if (!this.state.model || !this.state.model.metrics || this.state.model.metrics.length == 0) return;
 
     let pager = []; 
     for (var i = 0; i < this.state.model.metrics.length; i++) {
@@ -201,24 +171,23 @@ export default class ModelDetailScreen extends Component {
     // Generate 1 metric graph for each metric
     let metricGraphs = this.generateMetricsGraphs()
 
-    // Check which is stronger: retrained or champion?
-    let championSize = {width: 32, height: 32};
-    let retrainedSize = {width: 32, height: 32};
-    if (this.retrainedOutperformsChampion()) championSize = {width: 18, height: 18};
-    else retrainedSize = {width: 18, height: 18};
-
     // Tracker for the pages
     let pager = this.buildPager();
+
+    // Metric Name
+    let currentDisplayedMetric = this.state.model ? this.state.model.metrics[0].name : '';
+    if (this.state.model && this.state.model.metrics && this.state.model.metrics.length > 0 && this.state.currentPage)
+      currentDisplayedMetric = this.state.model.metrics[this.state.currentPage].name
 
     return (
       <View style={styles.container}>
 
         <View style={styles.headerArea}>
           <View style={{flex: 1}}>
-            <RetrainedModelInfo model={this.state.model} />
+            <RetrainedModelInfo modelName={this.state.modelName} />
           </View>
           <View style={{flex: 1, alignItems: 'center'}}>
-            <VersionContainer version={this.state.model.version} />
+            <VersionContainer version={this.state.model ? this.state.model.version : ''} />
           </View>
           <View style={{flex: 1}}>
             <ChampionModelInfo model={this.state.model} />
@@ -241,15 +210,14 @@ export default class ModelDetailScreen extends Component {
 
           <View style={styles.graphBottomContainer}>
             <View style={styles.promoteIconsContainer}>
-              <Image source={require('TotoML/img/fight.png')} style={[retrainedSize, {marginRight: 9}, styles.promoteChmpVsRetImg]} />
-              <Image source={require('TotoML/img/trophy.png')} style={[championSize, styles.promoteChmpVsRetImg]} />
+              <ChampionVsRetrainedIcons modelName={this.state.modelName} />
             </View>
             <View style={styles.graphLabelContainer}>
-              <Text style={styles.graphMetricName}>{this.state.model.metrics[this.state.currentPage].name}</Text>
+              <Text style={styles.graphMetricName}>{currentDisplayedMetric}</Text>
               {pager}
             </View>
             <View style={styles.promoteButtonContainer}>
-              <TRC.TotoIconButton image={require('TotoML/img/promote.png')} size='ms' onPress={this.promote} />
+              <TRC.TotoIconButton image={require('TotoML/img/promote.png')} size='ms' onPress={this.promote} disabled={this.state.retrainedModel == null || this.state.retrainedModel.modelName == null || this.state.training || this.state.promoting } />
             </View>
           </View>
 
@@ -297,9 +265,6 @@ const styles = StyleSheet.create({
     flexDirection: 'row',
     justifyContent: 'center',
     alignItems: 'center',
-  },
-  promoteChmpVsRetImg: {
-    tintColor: TRC.TotoTheme.theme.COLOR_THEME_LIGHT,
   },
   promoteButtonContainer: {
     flex: 1, 

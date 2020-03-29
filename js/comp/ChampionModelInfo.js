@@ -11,7 +11,7 @@ export default class ChampionModelInfo extends Component {
 
     render() {
 
-        championForHumanized = moment.duration(moment().diff(this.props.model.date)).humanize();
+        championForHumanized = this.props.model ? moment.duration(moment().diff(this.props.model.date)).humanize() : '';
 
         return (
             <View style={styles.container}>

@@ -1,6 +1,6 @@
 import moment from 'moment';
 import React, { Component } from 'react';
-import { Text, View, StyleSheet, Image} from 'react-native';
+import { Text, View, StyleSheet, Image } from 'react-native';
 import TRC from 'toto-react-components';
 import TotoMLRegistryAPI from 'TotoML/js/services/TotoMLRegistryAPI';
 import TotoLineChart from 'TotoML/js/totocomp/TotoLineChart';
@@ -11,7 +11,7 @@ const lineColors = [
     "#005662", "#cabf45", "#ffffa8", "#cabf45"
 ]
 
-const d3 = {array};
+const d3 = { array };
 
 /**
  * Shows the graph with the historical metrics of the model
@@ -33,6 +33,7 @@ export default class ChampionMetricGraph extends Component {
         this.valueLabelTransform = this.valueLabelTransform.bind(this);
         this.xLabel = this.xLabel.bind(this);
         this.onTrainingEnded = this.onTrainingEnded.bind(this);
+        this.onPromotionEnded = this.onPromotionEnded.bind(this);
     }
 
     componentDidMount() {
@@ -41,19 +42,24 @@ export default class ChampionMetricGraph extends Component {
 
         // Listen to events
         TRC.TotoEventBus.bus.subscribeToEvent(config.EVENTS.trainingEnded, this.onTrainingEnded)
+        TRC.TotoEventBus.bus.subscribeToEvent(config.EVENTS.promotionEnded, this.onPromotionEnded)
     }
 
     componentWillUnmount() {
         // Remove event listeners
         TRC.TotoEventBus.bus.unsubscribeToEvent(config.EVENTS.trainingEnded, this.onTrainingEnded)
+        TRC.TotoEventBus.bus.unsubscribeToEvent(config.EVENTS.promotionEnded, this.onPromotionEnded)
     }
 
     onTrainingEnded(event) {
-      if (event.context.modelName == this.props.modelName) this.loadMetrics();
+        if (event.context.modelName == this.props.modelName) this.loadMetrics();
     }
-    /**
+    onPromotionEnded(event) {
+        if (event.context.modelName == this.props.modelName) this.loadMetrics();
+    }
 
-    * Loads the historical metrics
+    /**
+     * Loads the historical metrics
      */
     loadMetrics() {
 
@@ -66,13 +72,9 @@ export default class ChampionMetricGraph extends Component {
             }, () => {
                 new TotoMLRegistryAPI().getRetrainedModel(this.props.modelName).then((data) => {
 
-                    if (data && data.metrics) {
-                        
-                        this.setState({
-                            retrainedModelMetrics: data.metrics
-                        }, this.prepareData)
-                    }
-                    else this.prepareData();
+                    this.setState({
+                        retrainedModelMetrics: (!data || !data.metrics) ? null : data.metrics
+                    }, this.prepareData)
                 })
             })
         })
@@ -104,28 +106,28 @@ export default class ChampionMetricGraph extends Component {
             for (var d = 0; d < numDays; d++) {
 
                 metricDays.push({
-                    x: d, 
+                    x: d,
                     y: days[d].metrics[m].value * 100
                 })
             }
         }
-        
+
         // Now let's define the line for the retrained model value
         let yLines = []
         if (this.state.retrainedModelMetrics) {
-            
-            for (var m = 0 ; m < this.state.retrainedModelMetrics.length; m++) {
-                
+
+            for (var m = 0; m < this.state.retrainedModelMetrics.length; m++) {
+
                 rmMetric = this.state.retrainedModelMetrics[m];
-                
+
                 if (rmMetric.name != this.props.metricName) continue;
-                
+
                 yLines.push(rmMetric.value * 100)
             }
         }
 
-        let minYValue = d3.array.min(metricDays, (d) => {return d.y})
-        let maxYValue = d3.array.max(metricDays, (d) => {return d.y})
+        let minYValue = d3.array.min(metricDays, (d) => { return d.y })
+        let maxYValue = d3.array.max(metricDays, (d) => { return d.y })
 
         if (yLines.length > 0) {
             if (minYValue > yLines[0]) minYValue = yLines[0];
@@ -135,9 +137,9 @@ export default class ChampionMetricGraph extends Component {
         let delta = maxYValue - minYValue;
 
         this.setState({
-            metrics: metricDays, 
-            minYValue: minYValue - delta/5,
-            maxYValue: maxYValue + delta/5,
+            metrics: metricDays,
+            minYValue: minYValue - delta / 5,
+            maxYValue: maxYValue + delta / 5,
             yLines: yLines
         })
     }
@@ -160,6 +162,8 @@ export default class ChampionMetricGraph extends Component {
      */
     xLabel(value) {
 
+        if (!this.state.historicalMetrics || this.state.historicalMetrics.length == 0) return '';
+
         let date = this.state.historicalMetrics[value].date;
 
         return moment(date, 'YYYYMMDD').format('DD MMM');
@@ -169,7 +173,7 @@ export default class ChampionMetricGraph extends Component {
         return (
             <View style={styles.container}>
 
-                <TotoLineChart 
+                <TotoLineChart
                     data={this.state.metrics}
                     valueLabelTransform={this.valueLabelTransform}
                     curveCardinal={false}
@@ -189,8 +193,8 @@ export default class ChampionMetricGraph extends Component {
                     xAxisTransform={this.xLabel}
                     xLabelPosition='top'
                     xLabelLines={true}
-                    />
-                
+                />
+
             </View>
         )
     }
