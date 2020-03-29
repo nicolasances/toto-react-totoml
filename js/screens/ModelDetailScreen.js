@@ -1,4 +1,3 @@
-import moment from 'moment';
 import React, {Component} from 'react';
 import {StyleSheet, Text, View, Image} from 'react-native';
 import TRC from 'toto-react-components';
@@ -47,6 +46,9 @@ export default class ModelDetailScreen extends Component {
     this.retrain = this.retrain.bind(this);
     this.onTrainingEnded = this.onTrainingEnded.bind(this);
     this.onTrainingStarted = this.onTrainingStarted.bind(this);
+    this.onModelPromoted = this.onModelPromoted.bind(this);
+    this.promote = this.promote.bind(this);
+    this.reloadModel = this.reloadModel.bind(this);
   }
 
   componentDidMount() {
@@ -60,12 +62,14 @@ export default class ModelDetailScreen extends Component {
     // Listen to events
     TRC.TotoEventBus.bus.subscribeToEvent(config.EVENTS.trainingStarted, this.onTrainingStarted)
     TRC.TotoEventBus.bus.subscribeToEvent(config.EVENTS.trainingEnded, this.onTrainingEnded)
+    TRC.TotoEventBus.bus.subscribeToEvent(config.EVENTS.modelPromoted, this.onModelPromoted)
   }
     
   componentWillUnmount() {
       // Remove event listeners
       TRC.TotoEventBus.bus.unsubscribeToEvent(config.EVENTS.trainingStarted, this.onTrainingStarted)
       TRC.TotoEventBus.bus.unsubscribeToEvent(config.EVENTS.trainingEnded, this.onTrainingEnded)
+      TRC.TotoEventBus.bus.unsubscribeToEvent(config.EVENTS.modelPromoted, this.onModelPromoted)
   }
 
   onTrainingEnded(event) {
@@ -74,12 +78,37 @@ export default class ModelDetailScreen extends Component {
   onTrainingStarted(event) {
     if (event.context.modelName == this.state.model.name) this.setState({training: true});
   }
+  onModelPromoted(event) {
+    if (event.context.modelName == this.state.model.name) this.reloadModel();
+  }
+  
+  /**
+   * Reloads the model
+   */
+  reloadModel() {
+    new TotoMLRegistryAPI().getModel(this.state.model.name).then((data) => {
+      this.setState({model: data})
+    })
+  }
 
   /**
    * Retrraing the Champion Model
    */
   retrain() {
     trainingUtil.retrain(this.state.model.name);
+  }
+
+  /**
+   * Promotes the model
+   */
+  promote() {
+    
+    new TotoMLRegistryAPI().promoteModel(this.state.model.name).then((data) => {
+      
+      // Publish an event 
+      TRC.TotoEventBus.bus.publishEvent({name: config.EVENTS.modelPromoted, context: {modelName: this.state.model.name}})
+      
+    })
   }
 
   /**
@@ -146,11 +175,10 @@ export default class ModelDetailScreen extends Component {
     if (!this.state.model.metrics || this.state.model.metrics.length == 0) return;
 
     let pager = []; 
-
     for (var i = 0; i < this.state.model.metrics.length; i++) {
 
+      // Styles
       let pageStyles = [styles.pageButton];
-      
       if (this.state.currentPage == i) pageStyles.push(styles.pageSelected);
 
       let page = (
@@ -159,7 +187,6 @@ export default class ModelDetailScreen extends Component {
       )
 
       pager.push(page);
-
     }
 
     return (
@@ -222,7 +249,7 @@ export default class ModelDetailScreen extends Component {
               {pager}
             </View>
             <View style={styles.promoteButtonContainer}>
-              <TRC.TotoIconButton image={require('TotoML/img/promote.png')} size='ms' />
+              <TRC.TotoIconButton image={require('TotoML/img/promote.png')} size='ms' onPress={this.promote} />
             </View>
           </View>
 

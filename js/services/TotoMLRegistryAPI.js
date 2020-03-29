@@ -20,6 +20,18 @@ export default class TotoMLRegistryAPI {
   }
 
   /**
+   * Get the model
+   */
+  getModel(modelName) {
+
+    // Post the data
+    return new TotoAPI().fetch('/totoml/registry/models/' + modelName, {
+      method: 'GET',
+    }).then((response => response.json()));
+
+  }
+
+  /**
    * Retrieves the last retrained model for the specified champion
    */
   getRetrainedModel(championName) {
@@ -51,6 +63,18 @@ export default class TotoMLRegistryAPI {
     // Post the data
     return new TotoAPI().fetch('/totoml/registry/models/' + modelName + '/status', {
       method: 'GET',
+    }).then((response => response.json()));
+
+  }
+
+  /**
+   * Promotes the Retrained Model to Champion!
+   */
+  promoteModel(modelName) {
+
+    // Post the data
+    return new TotoAPI().fetch('/totoml/registry/models/' + modelName + '/retrained/promote', {
+      method: 'POST',
     }).then((response => response.json()));
 
   }

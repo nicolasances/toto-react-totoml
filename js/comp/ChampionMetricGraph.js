@@ -72,6 +72,7 @@ export default class ChampionMetricGraph extends Component {
                             retrainedModelMetrics: data.metrics
                         }, this.prepareData)
                     }
+                    else this.prepareData();
                 })
             })
         })
@@ -126,8 +127,10 @@ export default class ChampionMetricGraph extends Component {
         let minYValue = d3.array.min(metricDays, (d) => {return d.y})
         let maxYValue = d3.array.max(metricDays, (d) => {return d.y})
 
-        if (minYValue > yLines[0]) minYValue = yLines[0];
-        if (maxYValue < yLines[0]) maxYValue = yLines[0];
+        if (yLines.length > 0) {
+            if (minYValue > yLines[0]) minYValue = yLines[0];
+            if (maxYValue < yLines[0]) maxYValue = yLines[0];
+        }
 
         let delta = maxYValue - minYValue;
 
