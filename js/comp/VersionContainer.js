@@ -35,7 +35,7 @@ const styles = StyleSheet.create({
         height: 96,
         borderRadius: 48,
         borderWidth: 3,
-        borderColor: TRC.TotoTheme.theme.COLOR_THEME_LIGHT
+        borderColor: TRC.TotoTheme.theme.COLOR_THEME_DARK
     }, 
     version: {
         fontSize: 24,

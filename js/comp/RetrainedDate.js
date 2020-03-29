@@ -4,6 +4,14 @@ import { Text, View, StyleSheet, Image} from 'react-native';
 import TRC from 'toto-react-components';
 import TotoMLRegistryAPI from '../services/TotoMLRegistryAPI';
 
+/**
+ * Shows the last retrained date
+ * 
+ * Parameters
+ * - model              : the champion model (object)
+ * - showIcon           : (optional, default true). Pass false to hide the icon
+ * - showLabel          : (optional, default true). Show or hide the label.
+ */
 export default class RetrainedDate extends Component {
 
     constructor(props) {
@@ -34,14 +42,36 @@ export default class RetrainedDate extends Component {
         let date = ''
         if (this.state.retrainedModel) date = moment(this.state.retrainedModel.date, 'YYYYMMDD').format('DD MMM YYYY');
 
+        // Humanize the last retrained date
+        let humanizedDate = '';
+        if (this.state.retrainedModel) {
+            
+            let retrainedDate;
+            if (this.state.retrainedModel.time) retrainedDate = moment(this.state.retrainedModel.date + '' + this.state.retrainedModel.time, 'YYYYMMDDHH:mm');
+            else retrainedDate = moment(this.state.retrainedModel.date, 'YYYYMMDD');
+            
+            humanizedDate = moment.duration(moment().diff(retrainedDate)).humanize() + ' ago';
+        }
+
+        let label;
+        if (this.props.showLabel == null || this.props.showLabel) label = (
+            <Text style={styles.label}>Mdoel retrained</Text>
+        )
+
+        // Icon
+        let img;
+        if (this.props.showIcon == null || this.props.showIcon) img = (
+            <View style={styles.imgContainer}>
+                <Image style={styles.img} source={require('TotoML/img/fight.png')} />
+            </View>
+        )
+
         return (
             <View style={styles.container}>
-                <View style={styles.imgContainer}>
-                    <Image style={styles.img} source={require('TotoML/img/fight.png')} />
-                </View>
+                {img}
                 <View style={styles.textContainer}>
-                    <Text style={styles.label}>Last retrained on</Text>
-                    <Text style={styles.date}>{date}</Text>
+                    {label}
+                    <Text style={styles.date}>{humanizedDate}</Text>
                 </View>
             </View>
         )
@@ -50,7 +80,6 @@ export default class RetrainedDate extends Component {
 
 const styles = StyleSheet.create({
     container: {
-        flex: 1,
         flexDirection: 'row', 
         justifyContent: 'flex-start',
     },
@@ -69,15 +98,17 @@ const styles = StyleSheet.create({
         flex: 1,
         flexDirection: 'column',
         justifyContent: 'center',
-        alignItems: 'flex-start'
+        alignItems: 'center'
     },
     label: {
-        fontSize: 6,
+        fontSize: 8,
         color: TRC.TotoTheme.theme.COLOR_TEXT,
         textTransform: "uppercase"
     },
     date: {
-        fontSize: 18,
-        color: TRC.TotoTheme.theme.COLOR_TEXT
+        fontSize: 12,
+        color: TRC.TotoTheme.theme.COLOR_TEXT,
+        alignItems: 'center',
+        textTransform: "uppercase"
     }
 })

@@ -119,8 +119,8 @@ export default class ChampionMetricGraph extends Component {
 
         this.setState({
             metrics: metricDays, 
-            minYValue: minYValue - delta/4,
-            maxYValue: maxYValue + delta/4,
+            minYValue: minYValue - delta/5,
+            maxYValue: maxYValue + delta/5,
             yLines: yLines
         })
     }
