@@ -2,12 +2,14 @@ import moment from 'moment';
 import React, {Component} from 'react';
 import {StyleSheet, Text, View, Image} from 'react-native';
 import TRC from 'toto-react-components';
+import * as config from '../Config';
 import TotoMLRegistryAPI from 'TotoML/js/services/TotoMLRegistryAPI';
 import VersionContainer from '../comp/VersionContainer';
 import ChampionMetricGraph from '../comp/ChampionMetricGraph';
-import RetrainedDate from '../comp/RetrainedDate';
+import RetrainedModelInfo from '../comp/RetrainedModelInfo';
+import ChampionModelInfo from '../comp/ChampionModelInfo';
 import Swiper from 'react-native-swiper';
-import ModelAPI from '../services/ModelAPI';
+import {trainingUtil} from '../util/TrainingUtil';
 
 export default class ModelDetailScreen extends Component {
 
@@ -33,18 +35,18 @@ export default class ModelDetailScreen extends Component {
 
     model = this.props.navigation.getParam('model');
 
-    championForHumanized = moment.duration(moment().diff(model.date)).humanize();
-
     this.state = {
       model: model,
-      championFor: championForHumanized,
-      currentPage: 0
+      currentPage: 0, 
+      training: trainingUtil.isModelTraining(model.name)
     }
 
     // Binding 
     this.generateMetricsGraphs = this.generateMetricsGraphs.bind(this);
     this.retrainedOutperformsChampion = this.retrainedOutperformsChampion.bind(this);
     this.retrain = this.retrain.bind(this);
+    this.onTrainingEnded = this.onTrainingEnded.bind(this);
+    this.onTrainingStarted = this.onTrainingStarted.bind(this);
   }
 
   componentDidMount() {
@@ -54,15 +56,30 @@ export default class ModelDetailScreen extends Component {
         retrainedModel: data
       })
     })
+
+    // Listen to events
+    TRC.TotoEventBus.bus.subscribeToEvent(config.EVENTS.trainingStarted, this.onTrainingStarted)
+    TRC.TotoEventBus.bus.subscribeToEvent(config.EVENTS.trainingEnded, this.onTrainingEnded)
+  }
+    
+  componentWillUnmount() {
+      // Remove event listeners
+      TRC.TotoEventBus.bus.unsubscribeToEvent(config.EVENTS.trainingStarted, this.onTrainingStarted)
+      TRC.TotoEventBus.bus.unsubscribeToEvent(config.EVENTS.trainingEnded, this.onTrainingEnded)
+  }
+
+  onTrainingEnded(event) {
+    if (event.context.modelName == this.state.model.name) this.setState({training: false});
+  }
+  onTrainingStarted(event) {
+    if (event.context.modelName == this.state.model.name) this.setState({training: true});
   }
 
   /**
    * Retrraing the Champion Model
    */
   retrain() {
-    new ModelAPI().retrainModel(this.state.model.name).then((data) => {
-      console.log(data);
-    })
+    trainingUtil.retrain(this.state.model.name);
   }
 
   /**
@@ -80,16 +97,17 @@ export default class ModelDetailScreen extends Component {
       let metricGraph = (
         <View key={'metricgraph-' + i} style={styles.graphContainer}>
           <ChampionMetricGraph modelName={this.state.model.name} metricName={this.state.model.metrics[i].name}/>
-          <View style={styles.graphLabelContainer}>
-            <Text style={styles.graphMetricName}>{this.state.model.metrics[i].name}</Text>
-          </View>
         </View>
       )
 
       metricGraphs.push(metricGraph);
     }
 
-    return metricGraphs;
+    return (
+      <Swiper style={{}} loop={false} showsPagination={false} onIndexChanged={(i) => {this.setState({currentPage: i})}}>
+        {metricGraphs}
+      </Swiper>
+    );
 
   }
 
@@ -144,7 +162,11 @@ export default class ModelDetailScreen extends Component {
 
     }
 
-    return pager;
+    return (
+      <View style={styles.pagerContainer}>
+        {pager}
+      </View>
+    );
   }
 
   render() {
@@ -165,18 +187,14 @@ export default class ModelDetailScreen extends Component {
       <View style={styles.container}>
 
         <View style={styles.headerArea}>
-          <View style={styles.retrainedModelContainer}>
-            <Text style={styles.modelLabel}>Retrained</Text>
-            <Image source={require('TotoML/img/fight.png')} style={styles.modelImage} />
-            <RetrainedDate model={this.state.model} showIcon={false} showLabel={false} />
+          <View style={{flex: 1}}>
+            <RetrainedModelInfo model={this.state.model} />
           </View>
-          <View style={styles.versionContainer}>
+          <View style={{flex: 1, alignItems: 'center'}}>
             <VersionContainer version={this.state.model.version} />
           </View>
-          <View style={styles.championModelContainer}>
-            <Text style={styles.modelLabel}>Champion for</Text>
-            <Image source={require('TotoML/img/trophy.png')} style={styles.modelImage} />
-            <Text style={styles.modelValue}>{this.state.championFor}</Text>
+          <View style={{flex: 1}}>
+            <ChampionModelInfo model={this.state.model} />
           </View>
         </View>
 
@@ -184,29 +202,30 @@ export default class ModelDetailScreen extends Component {
           <View style={{flex: 1}}>
           </View>
           <View style={styles.retrainModelContainer}>
-            <TRC.TotoIconButton image={require('TotoML/img/fight.png')} label="Retrain" onPress={this.retrain} />
+            <TRC.TotoIconButton image={require('TotoML/img/fight.png')} label="Retrain" onPress={this.retrain} disabled={this.state.training}  />
             <TRC.TotoIconButton image={require('TotoML/img/score.png')} label="Rescore" />
           </View>
           <View style={{flex: 1}}></View>
         </View>
 
-        <View style={styles.promoteContainer}>
-          <View style={styles.promoteIconsContainer}>
-            <Image source={require('TotoML/img/fight.png')} style={[retrainedSize, {marginRight: 9}, styles.promoteChmpVsRetImg]} />
-            <Image source={require('TotoML/img/trophy.png')} style={[championSize, styles.promoteChmpVsRetImg]} />
-          </View>
-          <View style={{flex: 1, flexDirection: 'row', justifyContent: 'center', alignItems: 'center'}}>
-            {pager}
-          </View>
-          <View style={styles.promoteButtonContainer}>
-            <TRC.TotoIconButton image={require('TotoML/img/promote.png')} label="Promote" size='ms' />
-          </View>
-        </View>
-
         <View style={styles.graphArea}>
-          <Swiper style={{}} loop={false} showsPagination={false} onIndexChanged={(i) => {this.setState({currentPage: i})}}>
-              {metricGraphs}
-          </Swiper>
+          
+          {metricGraphs}
+
+          <View style={styles.graphBottomContainer}>
+            <View style={styles.promoteIconsContainer}>
+              <Image source={require('TotoML/img/fight.png')} style={[retrainedSize, {marginRight: 9}, styles.promoteChmpVsRetImg]} />
+              <Image source={require('TotoML/img/trophy.png')} style={[championSize, styles.promoteChmpVsRetImg]} />
+            </View>
+            <View style={styles.graphLabelContainer}>
+              <Text style={styles.graphMetricName}>{this.state.model.metrics[this.state.currentPage].name}</Text>
+              {pager}
+            </View>
+            <View style={styles.promoteButtonContainer}>
+              <TRC.TotoIconButton image={require('TotoML/img/promote.png')} size='ms' />
+            </View>
+          </View>
+
         </View>
 
       </View>
@@ -227,50 +246,14 @@ const styles = StyleSheet.create({
     flexDirection: 'row',
     justifyContent: 'flex-start',
     alignItems: 'center',
+    marginHorizontal: 12,
   },
-  versionContainer: {
-    flex: 1,
-    flexDirection: 'column',
-    justifyContent: 'center',
-    alignItems: 'center'
-  },
-  retrainedModelContainer: {
-    flex: 1,
-    flexDirection: 'column',
-    justifyContent: 'center',
-    alignItems: 'center',
-    marginLeft: 12,
-  },
-  championModelContainer: {
-    flex: 1,
-    flexDirection: 'column',
-    justifyContent: 'center',
-    alignItems: 'center',
-    marginRight: 12,
-  },
-  modelLabel: {
-    color: TRC.TotoTheme.theme.COLOR_TEXT,
-    fontSize: 12,
-    textTransform: "uppercase",
-    marginBottom: 6,
-  },
-  modelValue: {
-    color: TRC.TotoTheme.theme.COLOR_TEXT,
-    fontSize: 12,
-    textTransform: "uppercase",
-  },
-  modelImage: {
-    width: 32, 
-    height: 32,
-    tintColor: 'rgba(0,0,0,0.5)',
-    marginBottom: 6,
-  },
-  
   buttonsContainer: {
     flexDirection: 'row',
     justifyContent: 'center',
     alignItems: 'stretch',
     marginTop: 24,
+    marginBottom: 24,
   },
   retrainModelContainer: {
     flex: 1,
@@ -282,32 +265,30 @@ const styles = StyleSheet.create({
   /*
    * PROMOTE CONTAINER
    */
-  promoteContainer: {
-    flexDirection: 'row',
-    marginTop: 16,
-    paddingHorizontal: 12,
-    paddingTop: 20,
-    backgroundColor: TRC.TotoTheme.theme.COLOR_THEME_DARK,
-  },
   promoteIconsContainer: {
+    flex: 1,
     flexDirection: 'row',
-    justifyContent: 'flex-start',
+    justifyContent: 'center',
     alignItems: 'center',
-    marginLeft: 6,
   },
   promoteChmpVsRetImg: {
     tintColor: TRC.TotoTheme.theme.COLOR_THEME_LIGHT,
   },
   promoteButtonContainer: {
+    flex: 1, 
     flexDirection: 'column',
     justifyContent: 'center',
     alignItems: 'center'
   },
 
+  pagerContainer: {
+    flexDirection: 'row',
+    marginTop: 6
+  },
   pageButton: {
-    width: 10, 
-    height: 10,
-    borderRadius: 5, 
+    width: 8, 
+    height: 8,
+    borderRadius: 4, 
     marginHorizontal: 3,
     opacity: 0.5,
     backgroundColor: TRC.TotoTheme.theme.COLOR_THEME
@@ -322,28 +303,28 @@ const styles = StyleSheet.create({
    */
   graphArea: {
     flex: 1,
-    flexDirection: 'row',
+    flexDirection: 'column',
     backgroundColor: TRC.TotoTheme.theme.COLOR_THEME_DARK
   },
   graphContainer: {
     flex: 1,
     flexDirection: 'column',
   },
-  graphLabelContainer: {
-    flexDirection: 'column',
+  graphBottomContainer: {
+    flexDirection: 'row',
     marginBottom: 24,
-    justifyContent: 'center',
+    justifyContent: 'flex-start',
     alignItems: 'center'
+  },
+  graphLabelContainer: {
+    flex: 1, 
+    flexDirection: 'column',
+    justifyContent: 'center',
+    alignItems: 'center',
   },
   graphMetricName: {
     fontSize: 16,
     color: TRC.TotoTheme.theme.COLOR_TEXT,
     textTransform: "uppercase"
   },
-  graphMetricValue: {
-    fontSize: 10,
-    color: TRC.TotoTheme.theme.COLOR_TEXT,
-    textTransform: "capitalize",
-    marginTop: 3
-  }
 });

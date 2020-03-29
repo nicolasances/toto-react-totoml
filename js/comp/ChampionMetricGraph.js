@@ -5,6 +5,7 @@ import TRC from 'toto-react-components';
 import TotoMLRegistryAPI from 'TotoML/js/services/TotoMLRegistryAPI';
 import TotoLineChart from 'TotoML/js/totocomp/TotoLineChart';
 import * as array from 'd3-array';
+import * as config from '../Config';
 
 const lineColors = [
     "#005662", "#cabf45", "#ffffa8", "#cabf45"
@@ -31,15 +32,28 @@ export default class ChampionMetricGraph extends Component {
         this.prepareData = this.prepareData.bind(this);
         this.valueLabelTransform = this.valueLabelTransform.bind(this);
         this.xLabel = this.xLabel.bind(this);
+        this.onTrainingEnded = this.onTrainingEnded.bind(this);
     }
 
     componentDidMount() {
         // Load the historical metrics
         this.loadMetrics();
+
+        // Listen to events
+        TRC.TotoEventBus.bus.subscribeToEvent(config.EVENTS.trainingEnded, this.onTrainingEnded)
     }
 
+    componentWillUnmount() {
+        // Remove event listeners
+        TRC.TotoEventBus.bus.unsubscribeToEvent(config.EVENTS.trainingEnded, this.onTrainingEnded)
+    }
+
+    onTrainingEnded(event) {
+      if (event.context.modelName == this.props.modelName) this.loadMetrics();
+    }
     /**
-     * Loads the historical metrics
+
+    * Loads the historical metrics
      */
     loadMetrics() {
 

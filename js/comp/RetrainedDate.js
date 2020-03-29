@@ -1,8 +1,10 @@
 import moment from 'moment';
 import React, { Component } from 'react';
 import { Text, View, StyleSheet, Image} from 'react-native';
+import * as config from '../Config';
 import TRC from 'toto-react-components';
 import TotoMLRegistryAPI from '../services/TotoMLRegistryAPI';
+import {trainingUtil} from '../util/TrainingUtil';
 
 /**
  * Shows the last retrained date
@@ -17,14 +19,55 @@ export default class RetrainedDate extends Component {
     constructor(props) {
         super(props);
 
-        this.state = {}
+        this.state = {
+            training: trainingUtil.isModelTraining(this.props.model.name)
+        }
 
         this.loadRetrainedModel = this.loadRetrainedModel.bind(this);
+        this.onTrainingEnded = this.onTrainingEnded.bind(this);
+        this.onTrainingStarted = this.onTrainingStarted.bind(this);
+
     }
 
     componentDidMount() {
+        // Load the retrained
         this.loadRetrainedModel()
+
+        // Listen to events
+        TRC.TotoEventBus.bus.subscribeToEvent(config.EVENTS.trainingStarted, this.onTrainingStarted)
+        TRC.TotoEventBus.bus.subscribeToEvent(config.EVENTS.trainingEnded, this.onTrainingEnded)
     }
+    
+    componentWillUnmount() {
+        // Remove event listeners
+        TRC.TotoEventBus.bus.unsubscribeToEvent(config.EVENTS.trainingStarted, this.onTrainingStarted)
+        TRC.TotoEventBus.bus.unsubscribeToEvent(config.EVENTS.trainingEnded, this.onTrainingEnded)
+    }
+
+    /**
+     * When the training started for this model
+     */
+    onTrainingStarted(event) {
+
+        if (event.context.modelName == this.props.model.name) {
+            this.setState({
+                training: true
+            })
+        }
+    } 
+
+    /**
+     * When the training ended for this model
+     */
+    onTrainingEnded(event) {
+
+        if (event.context.modelName == this.props.model.name) {
+            this.setState({
+                training: false
+            })
+            this.loadRetrainedModel()
+        }
+    } 
 
     loadRetrainedModel() {
         new TotoMLRegistryAPI().getRetrainedModel(this.props.model.name).then((data) => {
@@ -44,6 +87,7 @@ export default class RetrainedDate extends Component {
 
         // Humanize the last retrained date
         let humanizedDate = '';
+        let dateColor = {}
         if (this.state.retrainedModel) {
             
             let retrainedDate;
@@ -51,6 +95,10 @@ export default class RetrainedDate extends Component {
             else retrainedDate = moment(this.state.retrainedModel.date, 'YYYYMMDD');
             
             humanizedDate = moment.duration(moment().diff(retrainedDate)).humanize() + ' ago';
+        }
+        if (this.state.training) {
+            humanizedDate = 'Training now...';
+            dateColor = {color: TRC.TotoTheme.theme.COLOR_ACCENT}
         }
 
         let label;
@@ -71,7 +119,7 @@ export default class RetrainedDate extends Component {
                 {img}
                 <View style={styles.textContainer}>
                     {label}
-                    <Text style={styles.date}>{humanizedDate}</Text>
+                    <Text style={[styles.date, dateColor]}>{humanizedDate}</Text>
                 </View>
             </View>
         )

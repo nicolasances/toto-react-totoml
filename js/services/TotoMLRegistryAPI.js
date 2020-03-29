@@ -43,4 +43,16 @@ export default class TotoMLRegistryAPI {
 
   }
 
+  /**
+   * Get the status of the model
+   */
+  getModelStatus(modelName) {
+
+    // Post the data
+    return new TotoAPI().fetch('/totoml/registry/models/' + modelName + '/status', {
+      method: 'GET',
+    }).then((response => response.json()));
+
+  }
+
 }
