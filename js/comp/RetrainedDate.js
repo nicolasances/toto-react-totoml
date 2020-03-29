@@ -109,6 +109,7 @@ const styles = StyleSheet.create({
         fontSize: 12,
         color: TRC.TotoTheme.theme.COLOR_TEXT,
         alignItems: 'center',
-        textTransform: "uppercase"
+        textTransform: "uppercase",
+        textAlign: 'center'
     }
 })

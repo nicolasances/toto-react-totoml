@@ -4,11 +4,10 @@ import {StyleSheet, Text, View, Image} from 'react-native';
 import TRC from 'toto-react-components';
 import TotoMLRegistryAPI from 'TotoML/js/services/TotoMLRegistryAPI';
 import VersionContainer from '../comp/VersionContainer';
-import Metrics from '../comp/Metrics';
 import ChampionMetricGraph from '../comp/ChampionMetricGraph';
 import RetrainedDate from '../comp/RetrainedDate';
 import Swiper from 'react-native-swiper';
-import { blob } from 'd3';
+import ModelAPI from '../services/ModelAPI';
 
 export default class ModelDetailScreen extends Component {
 
@@ -45,6 +44,7 @@ export default class ModelDetailScreen extends Component {
     // Binding 
     this.generateMetricsGraphs = this.generateMetricsGraphs.bind(this);
     this.retrainedOutperformsChampion = this.retrainedOutperformsChampion.bind(this);
+    this.retrain = this.retrain.bind(this);
   }
 
   componentDidMount() {
@@ -53,6 +53,15 @@ export default class ModelDetailScreen extends Component {
       this.setState({
         retrainedModel: data
       })
+    })
+  }
+
+  /**
+   * Retrraing the Champion Model
+   */
+  retrain() {
+    new ModelAPI().retrainModel(this.state.model.name).then((data) => {
+      console.log(data);
     })
   }
 
@@ -175,7 +184,7 @@ export default class ModelDetailScreen extends Component {
           <View style={{flex: 1}}>
           </View>
           <View style={styles.retrainModelContainer}>
-            <TRC.TotoIconButton image={require('TotoML/img/fight.png')} label="Retrain" />
+            <TRC.TotoIconButton image={require('TotoML/img/fight.png')} label="Retrain" onPress={this.retrain} />
             <TRC.TotoIconButton image={require('TotoML/img/score.png')} label="Rescore" />
           </View>
           <View style={{flex: 1}}></View>
