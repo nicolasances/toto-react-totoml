@@ -10,6 +10,7 @@ import ChampionModelInfo from '../comp/ChampionModelInfo';
 import Swiper from 'react-native-swiper';
 import {trainingUtil} from '../util/TrainingUtil';
 import {promotionUtil} from '../util/PromotionUtil';
+import {scoringUtil} from '../util/ScoringUtil';
 import ChampionVsRetrainedIcons from '../comp/ChampionVsRetrainedIcons';
 
 export default class ModelDetailScreen extends Component {
@@ -40,7 +41,8 @@ export default class ModelDetailScreen extends Component {
       modelName: modelName,
       currentPage: 0, 
       training: trainingUtil.isModelTraining(modelName),
-      promoting: promotionUtil.isModelPromoting(modelName)
+      promoting: promotionUtil.isModelPromoting(modelName),
+      scoring: scoringUtil.isModelScoring(modelName)
     }
 
     // Binding 
@@ -50,8 +52,11 @@ export default class ModelDetailScreen extends Component {
     this.onTrainingStarted = this.onTrainingStarted.bind(this);
     this.onPromotionStarted = this.onPromotionStarted.bind(this);
     this.onPromotionEnded = this.onPromotionEnded.bind(this);
+    this.onScoringStarted = this.onScoringStarted.bind(this);
+    this.onScoringEnded = this.onScoringEnded.bind(this);
     this.promote = this.promote.bind(this);
     this.reload = this.reload.bind(this);
+    this.score = this.score.bind(this);
   }
 
   componentDidMount() {
@@ -63,14 +68,18 @@ export default class ModelDetailScreen extends Component {
     TRC.TotoEventBus.bus.subscribeToEvent(config.EVENTS.trainingEnded, this.onTrainingEnded)
     TRC.TotoEventBus.bus.subscribeToEvent(config.EVENTS.promotionStarted, this.onPromotionStarted)
     TRC.TotoEventBus.bus.subscribeToEvent(config.EVENTS.promotionEnded, this.onPromotionEnded)
+    TRC.TotoEventBus.bus.subscribeToEvent(config.EVENTS.scoringStarted, this.onScoringStarted)
+    TRC.TotoEventBus.bus.subscribeToEvent(config.EVENTS.scoringEnded, this.onScoringEnded)
   }
-    
+  
   componentWillUnmount() {
-      // Remove event listeners
-      TRC.TotoEventBus.bus.unsubscribeToEvent(config.EVENTS.trainingStarted, this.onTrainingStarted)
-      TRC.TotoEventBus.bus.unsubscribeToEvent(config.EVENTS.trainingEnded, this.onTrainingEnded)
-      TRC.TotoEventBus.bus.unsubscribeToEvent(config.EVENTS.promotionStarted, this.onPromotionStarted)
-      TRC.TotoEventBus.bus.unsubscribeToEvent(config.EVENTS.promotionEnded, this.onPromotionEnded)
+    // Remove event listeners
+    TRC.TotoEventBus.bus.unsubscribeToEvent(config.EVENTS.trainingStarted, this.onTrainingStarted)
+    TRC.TotoEventBus.bus.unsubscribeToEvent(config.EVENTS.trainingEnded, this.onTrainingEnded)
+    TRC.TotoEventBus.bus.unsubscribeToEvent(config.EVENTS.promotionStarted, this.onPromotionStarted)
+    TRC.TotoEventBus.bus.unsubscribeToEvent(config.EVENTS.promotionEnded, this.onPromotionEnded)
+    TRC.TotoEventBus.bus.unsubscribeToEvent(config.EVENTS.scoringStarted, this.onScoringStarted)
+    TRC.TotoEventBus.bus.unsubscribeToEvent(config.EVENTS.scoringEnded, this.onScoringEnded)
   }
 
   onTrainingEnded(event) {
@@ -85,6 +94,12 @@ export default class ModelDetailScreen extends Component {
   onPromotionStarted(event) {
     if (event.context.modelName == this.state.model.name) {this.setState({promoting: true}); this.reload();}
   }
+  onScoringStarted(event) {
+    if (event.context.modelName == this.state.model.name) {this.setState({scoring: true}); this.reload();}
+  }
+  onScoringEnded(event) {
+    if (event.context.modelName == this.state.model.name) {this.setState({scoring: false}); this.reload();}
+  }
   
   /**
    * Reloads the model and the retrained model
@@ -92,8 +107,6 @@ export default class ModelDetailScreen extends Component {
   reload() {
     new TotoMLRegistryAPI().getModel(this.state.modelName).then((data) => {this.setState({model: data})});
     new TotoMLRegistryAPI().getRetrainedModel(this.state.modelName).then((data) => {this.setState({retrainedModel: data})});
-
-    this.generateMetricsGraphs()
   }
 
   /**
@@ -108,6 +121,13 @@ export default class ModelDetailScreen extends Component {
    */
   promote() {
     promotionUtil.promote(this.state.modelName);
+  }
+
+  /**
+   * Scores the model
+   */
+  score() {
+    scoringUtil.score(this.state.modelName);
   }
 
   /**
@@ -201,7 +221,7 @@ export default class ModelDetailScreen extends Component {
           </View>
           <View style={styles.retrainModelContainer}>
             <TRC.TotoIconButton image={require('TotoML/img/fight.png')} label="Retrain" onPress={this.retrain} disabled={this.state.training}  />
-            <TRC.TotoIconButton image={require('TotoML/img/score.png')} label="Rescore" />
+            <TRC.TotoIconButton image={require('TotoML/img/score.png')} label="Rescore" onPress={this.score} disabled={this.state.scoring} />
           </View>
           <View style={{flex: 1}}></View>
         </View>

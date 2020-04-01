@@ -8,4 +8,6 @@ export const EVENTS = {
   trainingEnded: 'trainingEnded',         // Triggered when the training of a model has ended. Will provide the name of the model as "modelName"
   promotionStarted: 'promotionStarted',   // A model is being promoted. Will provide the name of the model as "modelName"
   promotionEnded: 'promotionEnded',       // A model has been promoted. Will provide the name of the model as "modelName"
+  scoringStarted: 'scoringStarted',       // A model has started the scoring process. Will provide the name of the model as "modelName"
+  scoringEnded: 'scoringEnded',           // A model has finished the scoring process. Will provide the name of the model as "modelName"
 }

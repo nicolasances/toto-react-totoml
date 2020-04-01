@@ -21,4 +21,19 @@ export default class ModelAPI {
     }).then((response => response.json()));
 
   }
+
+  /**
+   * Scores the model
+   */
+  scoreModel(modelName) {
+
+    // Post the data
+    return new TotoAPI().fetch('/model/' + modelName + '/score', {
+      method: 'GET',
+      headers: {
+        'Content-Type': 'application/json'
+      }
+    }).then((response => response.json()));
+
+  }
 }
