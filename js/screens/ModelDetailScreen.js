@@ -92,6 +92,8 @@ export default class ModelDetailScreen extends Component {
   reload() {
     new TotoMLRegistryAPI().getModel(this.state.modelName).then((data) => {this.setState({model: data})});
     new TotoMLRegistryAPI().getRetrainedModel(this.state.modelName).then((data) => {this.setState({retrainedModel: data})});
+
+    this.generateMetricsGraphs()
   }
 
   /**
@@ -121,8 +123,8 @@ export default class ModelDetailScreen extends Component {
     for (var i = 0; i < this.state.model.metrics.length; i++) {
       
       let metricGraph = (
-        <View key={'metricgraph-' + i} style={styles.graphContainer}>
-          <ChampionMetricGraph modelName={this.state.model.name} metricName={this.state.model.metrics[i].name}/>
+        <View key={this.state.modelName + '-metricgraph-' + i} style={styles.graphContainer}>
+          <ChampionMetricGraph modelName={this.state.modelName} metricName={this.state.model.metrics[i].name}/>
         </View>
       )
 
@@ -130,7 +132,7 @@ export default class ModelDetailScreen extends Component {
     }
 
     return (
-      <Swiper style={{}} loop={false} showsPagination={false} onIndexChanged={(i) => {this.setState({currentPage: i})}}>
+      <Swiper style={{}} index={this.state.currentPage} loop={false} showsPagination={false} onIndexChanged={(i) => {this.setState({currentPage: i})}}>
         {metricGraphs}
       </Swiper>
     );
@@ -315,8 +317,9 @@ const styles = StyleSheet.create({
     alignItems: 'center',
   },
   graphMetricName: {
-    fontSize: 16,
+    fontSize: 12,
     color: TRC.TotoTheme.theme.COLOR_TEXT,
-    textTransform: "uppercase"
+    textTransform: "uppercase",
+    textAlign: 'center',
   },
 });

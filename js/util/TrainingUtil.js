@@ -10,13 +10,13 @@ class TrainingUtil {
 
     constructor() {
         this.trainings = {}
-        
+
         // Bindings 
         this.onTrainingStarted = this.onTrainingStarted.bind(this);
         this.onTrainingEnded = this.onTrainingEnded.bind(this);
         this.loadModels = this.loadModels.bind(this);
         this.updateModelTrainingStatus = this.updateModelTrainingStatus.bind(this);
-        
+
         // Listeners
         TRC.TotoEventBus.bus.subscribeToEvent(config.EVENTS.trainingStarted, this.onTrainingStarted)
         TRC.TotoEventBus.bus.subscribeToEvent(config.EVENTS.trainingEnded, this.onTrainingEnded)
@@ -33,7 +33,7 @@ class TrainingUtil {
         new TotoMLRegistryAPI().getModels().then((data) => {
 
             if (!data || !data.models || data.models.length == 0) return;
-            
+
             for (var i = 0; i < data.models.length; i++) {
 
                 this.updateModelTrainingStatus(data.models[i].name);
@@ -52,11 +52,11 @@ class TrainingUtil {
 
             if (!data || !data.trainingStatus || data.trainingStatus == 'not-training') {
                 // Publish the ending
-                TRC.TotoEventBus.bus.publishEvent({name: config.EVENTS.trainingEnded, context: {modelName: modelName}});
+                TRC.TotoEventBus.bus.publishEvent({ name: config.EVENTS.trainingEnded, context: { modelName: modelName } });
             }
             else {
                 // Publish the start
-                TRC.TotoEventBus.bus.publishEvent({name: config.EVENTS.trainingStarted, context: {modelName: modelName}});
+                TRC.TotoEventBus.bus.publishEvent({ name: config.EVENTS.trainingStarted, context: { modelName: modelName } });
             }
 
         })
@@ -79,7 +79,7 @@ class TrainingUtil {
 
         // Save the information that a model is training 
         this.trainings[event.context.modelName] = true;
-    
+
         // Start the Training poller
         new TrainingPoller(event.context.modelName).start();
 
@@ -104,9 +104,9 @@ class TrainingUtil {
         // Trigger the model retraining
         new ModelAPI().retrainModel(modelName).then((data) => {
 
-          // Trigger the event stating that a training has started
-          TRC.TotoEventBus.bus.publishEvent({name: config.EVENTS.trainingStarted, context: {modelName: modelName}})
-    
+            // Trigger the event stating that a training has started
+            TRC.TotoEventBus.bus.publishEvent({ name: config.EVENTS.trainingStarted, context: { modelName: modelName } })
+
         })
 
     }
@@ -125,7 +125,7 @@ class TrainingPoller {
     }
 
     start() {
-        this.timer = setInterval(this.check, 1000)
+        this.timer = setInterval(this.check, 10000)
     }
 
     /**
@@ -138,8 +138,8 @@ class TrainingPoller {
 
             if (!data || !data.trainingStatus || data.trainingStatus == 'not-training') {
 
-                TRC.TotoEventBus.bus.publishEvent({name: config.EVENTS.trainingEnded, context: {modelName: this.modelName}});
-                
+                TRC.TotoEventBus.bus.publishEvent({ name: config.EVENTS.trainingEnded, context: { modelName: this.modelName } });
+
                 clearInterval(this.timer);
 
             }

@@ -62,7 +62,7 @@ export default class ChampionMetricGraph extends Component {
      * Loads the historical metrics
      */
     loadMetrics() {
-
+        
         new TotoMLRegistryAPI().getChampionHistoricalMetrics(this.props.modelName).then((data) => {
 
             if (!data && !data.metrics) return;
