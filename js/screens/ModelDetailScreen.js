@@ -12,6 +12,7 @@ import {trainingUtil} from '../util/TrainingUtil';
 import {promotionUtil} from '../util/PromotionUtil';
 import {scoringUtil} from '../util/ScoringUtil';
 import ChampionVsRetrainedIcons from '../comp/ChampionVsRetrainedIcons';
+import ModelDescription from '../comp/ModelDescription';
 
 export default class ModelDetailScreen extends Component {
 
@@ -216,6 +217,10 @@ export default class ModelDetailScreen extends Component {
           </View>
         </View>
 
+        <View style={styles.descriptionContainer}>
+          <ModelDescription modelName={this.state.modelName} />
+        </View>
+
         <View style={styles.buttonsContainer}>
           <View style={{flex: 1}}>
           </View>
@@ -269,7 +274,7 @@ const styles = StyleSheet.create({
     flexDirection: 'row',
     justifyContent: 'center',
     alignItems: 'stretch',
-    marginTop: 24,
+    marginTop: 6,
     marginBottom: 24,
   },
   retrainModelContainer: {
@@ -341,5 +346,11 @@ const styles = StyleSheet.create({
     color: TRC.TotoTheme.theme.COLOR_TEXT,
     textTransform: "uppercase",
     textAlign: 'center',
+  },
+
+  descriptionContainer: {
+    flexDirection: 'row',
+    marginTop: 24,
+    marginBottom: 12,
   },
 });

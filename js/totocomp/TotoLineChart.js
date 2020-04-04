@@ -51,6 +51,7 @@ const d3 = {scale, shape, array, path};
  * - yLinesFullWidth        : (optional, default true) set false if the horizontal line shouldn't fill the whole width of the screen
  * - yLinesDashed           : (optional, default false). If true will show the y lines as dashed lines
  * - yLinesIcons            : (optional, default none). A list of icons to be added for each y line, where the label is (in front of the label)
+ * - yLinesExtraLabels      : (optional, default none). A list of additional labels to be put next to the ylines labels
  * - valueLabelColor        : (optional, default COLOR_TEXT) the color of the value labels
  */
 export default class TotoLineChart extends Component {
@@ -224,11 +225,18 @@ export default class TotoLineChart extends Component {
       let top = this.y(ylines[i]) + 6;
       if (this.props.yLinesIcons) top += 3;
 
+      // Additional Label
+      let additionalLabel;
+      if (this.props.yLinesExtraLabels && this.props.yLinesExtraLabels.length > i) additionalLabel = (
+        <Text style={styles.yLinedAddLabel}>{this.props.yLinesExtraLabels[i]}</Text>
+      )
+
       // Create the text element
       let element = (
-        <View key={key} style={{flexDirection: 'row', position: 'absolute', left: 6, top: top}}>
+        <View key={key} style={{flexDirection: 'row', position: 'absolute', left: 6, top: top, justifyContent: 'center', alignItems: 'center'}}>
           {image}
           <Text style={[styles.yAxisLabel, color]}>{value}</Text>
+          {additionalLabel}
         </View>
       );
 
@@ -606,5 +614,10 @@ const styles = StyleSheet.create({
     width: 20, 
     height: 20,
     marginRight: 9,
+  },
+  yLinedAddLabel: {
+    color: TRC.TotoTheme.theme.COLOR_ACCENT,
+    fontSize: 12,
+    marginLeft: 6,
   }
 });

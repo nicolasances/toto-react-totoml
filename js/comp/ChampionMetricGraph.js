@@ -25,7 +25,9 @@ export default class ChampionMetricGraph extends Component {
     constructor(props) {
         super(props);
 
-        this.state = {}
+        this.state = {
+            rmVsChMetricDelta: 0
+        }
 
         // Bindings
         this.loadMetrics = this.loadMetrics.bind(this);
@@ -34,6 +36,7 @@ export default class ChampionMetricGraph extends Component {
         this.xLabel = this.xLabel.bind(this);
         this.onTrainingEnded = this.onTrainingEnded.bind(this);
         this.onPromotionEnded = this.onPromotionEnded.bind(this);
+        this.onScoringEnded = this.onScoringEnded.bind(this);
     }
 
     componentDidMount() {
@@ -43,18 +46,23 @@ export default class ChampionMetricGraph extends Component {
         // Listen to events
         TRC.TotoEventBus.bus.subscribeToEvent(config.EVENTS.trainingEnded, this.onTrainingEnded)
         TRC.TotoEventBus.bus.subscribeToEvent(config.EVENTS.promotionEnded, this.onPromotionEnded)
+        TRC.TotoEventBus.bus.subscribeToEvent(config.EVENTS.scoringEnded, this.onScoringEnded)
     }
 
     componentWillUnmount() {
         // Remove event listeners
         TRC.TotoEventBus.bus.unsubscribeToEvent(config.EVENTS.trainingEnded, this.onTrainingEnded)
         TRC.TotoEventBus.bus.unsubscribeToEvent(config.EVENTS.promotionEnded, this.onPromotionEnded)
+        TRC.TotoEventBus.bus.unsubscribeToEvent(config.EVENTS.scoringEnded, this.onScoringEnded)
     }
 
     onTrainingEnded(event) {
         if (event.context.modelName == this.props.modelName) this.loadMetrics();
     }
     onPromotionEnded(event) {
+        if (event.context.modelName == this.props.modelName) this.loadMetrics();
+    }
+    onScoringEnded(event) {
         if (event.context.modelName == this.props.modelName) this.loadMetrics();
     }
 
@@ -96,9 +104,11 @@ export default class ChampionMetricGraph extends Component {
         let targetMetric = this.props.metricName;
 
         let metricDays = [];
+        let lastMetric = 0;
 
         // For the selected type of metric, create the data for a single line
         // because the lines are per metric type 
+        // Also extract the last value of the target metric, to compare it with the Retrain Model metric
         for (var m = 0; m < numMetrics; m++) {
 
             if (days[0].metrics[m].name != targetMetric) continue;
@@ -109,11 +119,15 @@ export default class ChampionMetricGraph extends Component {
                     x: d,
                     y: days[d].metrics[m].value * 100
                 })
+
+                // Extract the last metric value
+                if (d == numDays - 1) lastMetric = days[d].metrics[m].value;
             }
         }
 
         // Now let's define the line for the retrained model value
         let yLines = []
+        let rmVsChMetricDelta = 0;
         if (this.state.retrainedModelMetrics) {
 
             for (var m = 0; m < this.state.retrainedModelMetrics.length; m++) {
@@ -122,7 +136,11 @@ export default class ChampionMetricGraph extends Component {
 
                 if (rmMetric.name != this.props.metricName) continue;
 
+                // Define the line
                 yLines.push(rmMetric.value * 100)
+
+                // Extract the difference between the Retrained Model metric and the Champion Model metric
+                rmVsChMetricDelta = (rmMetric.value - lastMetric) * 100;
             }
         }
 
@@ -140,7 +158,8 @@ export default class ChampionMetricGraph extends Component {
             metrics: metricDays,
             minYValue: minYValue - delta / 5,
             maxYValue: maxYValue + delta / 5,
-            yLines: yLines
+            yLines: yLines, 
+            rmVsChMetricDelta: rmVsChMetricDelta
         })
     }
 
@@ -186,6 +205,7 @@ export default class ChampionMetricGraph extends Component {
                     yLinesLabelFontSize={10}
                     yLinesMarginHorizontal={12}
                     yLinesDashed={true}
+                    yLinesExtraLabels={['( ' + (this.state.rmVsChMetricDelta > 0 ? '+' + this.state.rmVsChMetricDelta.toFixed(2) : this.state.rmVsChMetricDelta.toFixed(2)) + ' )']}
                     yLinesIcons={[require('TotoML/img/fight.png')]}
                     valuePointsBackground={TRC.TotoTheme.theme.COLOR_THEME_DARK}
                     showValuePoints={this.state.metrics && this.state.metrics.length < 10}

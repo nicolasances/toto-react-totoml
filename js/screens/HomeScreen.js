@@ -12,7 +12,7 @@ export default class HomeScreen extends Component {
     return {
       headerLeft: null,
       headerTitle: <TRC.TotoTitleBar
-                      title='Toto ML Models'
+                      title='Model Registry'
                       color={TRC.TotoTheme.theme.COLOR_THEME}
                       titleColor={TRC.TotoTheme.theme.COLOR_TEXT}
                       />, 

@@ -32,6 +32,24 @@ export default class TotoMLRegistryAPI {
   }
 
   /**
+   * Updates the model 
+   * @param {str} modelName The name of the model
+   * @param {obj} data the data to be updated
+   */
+  putModel(modelName, data) {
+
+    // Post the data
+    return new TotoAPI().fetch('/totoml/registry/models/' + modelName, {
+      method: 'PUT',
+      headers: {
+        'Content-Type': 'application/json'
+      },
+      body: JSON.stringify(data)
+    }).then((response => response.json()));
+
+  }
+
+  /**
    * Retrieves the last retrained model for the specified champion
    */
   getRetrainedModel(championName) {
