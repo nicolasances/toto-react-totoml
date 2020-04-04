@@ -22,8 +22,9 @@ import moment from 'moment';
  *                                              must be a function(item)
  *                              leftSideValue:  a value to put on the left side of the title, after the avatar (e.g. the date of an expense)
  *                                              should be an object
- *                                              { type: 'date'
+ *                                              { type: 'date' | 'duration'
  *                                                value: the value. If 'date' => 'YYYYMMDD'
+ *                                                unit: the unit (optional). If 'duration' could be 'days' ...
  *                                              }
  *                              rightSideValue: a formatted value to put on the right-most side of the line (e.g. amount in an expenses list), 
  *                              leftSideSign :  an image to put as a "sign" (e.g. info sign to show that this item has info attached)
@@ -163,6 +164,38 @@ class Item extends Component {
           <Text style={styles.leftDateMonth}>{moment(data.leftSideValue.value, 'YYYYMMDD').format('MMM')}</Text>
         </View>
       )
+      else if (data.leftSideValue.type == 'duration') leftSideValue = (
+        <View style={styles.leftSideValueContainer}>
+          <Text style={styles.leftDateDay}>{ data.leftSideValue.value }</Text>
+          <Text style={styles.leftDateDuration}>{ data.leftSideValue.unit }</Text>
+        </View>
+      )
+    }
+
+    // Right side image stack
+    let rightSideImageStackContainer; 
+    if (data.rightSideImageStack) {
+
+      rightSideImageStack = [];
+
+      for (var i = 0; i < data.rightSideImageStack.length; i++) {
+
+        let size = data.rightSideImageStack[i].size;
+        
+        let rsi = (
+          <Image key={data.title + '-rsi-' + i} source={data.rightSideImageStack[i].image} style={[{width: size, height: size}, styles.rightSideImage]} />
+        )
+
+        rightSideImageStack.push(rsi);
+
+      }
+
+      rightSideImageStackContainer = (
+        <View style={styles.rightSideImageStackContainer}>
+          {rightSideImageStack}
+        </View>
+      )
+
     }
 
     return (
@@ -184,6 +217,7 @@ class Item extends Component {
           <Text style={styles.rightSideValue}>{data.rightSideValue}</Text>
         </View>
 
+        {rightSideImageStackContainer}
         {sign}
 
       </TouchableOpacity>
@@ -231,6 +265,15 @@ const styles = StyleSheet.create({
     fontSize: 14,
     color: TRC.TotoTheme.theme.COLOR_TEXT
   },
+  rightSideImageStackContainer: {
+    flexDirection: 'row',
+    justifyContent: 'center',
+    alignItems: 'center'
+  },
+  rightSideImage: {
+    tintColor: TRC.TotoTheme.theme.COLOR_TEXT,
+    marginHorizontal: 3,
+  },
   signContainer: {
     marginLeft: 12,
     justifyContent: 'center'
@@ -251,5 +294,10 @@ const styles = StyleSheet.create({
     fontSize: 10,
     color: TRC.TotoTheme.theme.COLOR_TEXT,
     textTransform: 'uppercase'
-  }
+  },
+  leftDateDuration: {
+    fontSize: 8, 
+    color: TRC.TotoTheme.theme.COLOR_TEXT,
+    textTransform: 'uppercase'
+  },
 })
