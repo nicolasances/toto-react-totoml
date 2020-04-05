@@ -27,6 +27,7 @@ import moment from 'moment';
  *                                                unit: the unit (optional). If 'duration' could be 'days' ...
  *                                              }
  *                              rightSideValue: a formatted value to put on the right-most side of the line (e.g. amount in an expenses list), 
+ *                              rightSideLabel: a formatted value to put as a label on the right side of the text
  *                              leftSideSign :  an image to put as a "sign" (e.g. info sign to show that this item has info attached)
  *                                              should be a loaded image, (provided as require(..), so already loaded)
  *                            }
@@ -198,6 +199,16 @@ class Item extends Component {
 
     }
 
+    // Right side label
+    let rightSideLabel;
+    if (data.rightSideLabel) rightSideLabel = (
+      <View style={styles.labelContainer}>
+        <View style={styles.labelTextContainer}>
+          <Text style={styles.labelText}>{data.rightSideLabel}</Text>
+        </View>
+      </View>
+    )
+
     return (
       <TouchableOpacity style={styles.item} onPress={() => {if (this.props.onItemPress) this.props.onItemPress(this.state)}}>
 
@@ -217,6 +228,7 @@ class Item extends Component {
           <Text style={styles.rightSideValue}>{data.rightSideValue}</Text>
         </View>
 
+        {rightSideLabel}
         {rightSideImageStackContainer}
         {sign}
 
@@ -273,6 +285,23 @@ const styles = StyleSheet.create({
   rightSideImage: {
     tintColor: TRC.TotoTheme.theme.COLOR_TEXT,
     marginHorizontal: 3,
+  },
+  labelContainer: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    justifyContent: 'center',
+    marginRight: 12,
+  },
+  labelTextContainer: {
+    paddingVertical: 4,
+    paddingHorizontal: 12,
+    backgroundColor: TRC.TotoTheme.theme.COLOR_THEME_DARK,
+    borderRadius: 30,
+  },
+  labelText: {
+    color: TRC.TotoTheme.theme.COLOR_TEXT_LIGHT,
+    fontSize: 10,
+    textAlign: 'center'
   },
   signContainer: {
     marginLeft: 12,

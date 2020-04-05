@@ -105,7 +105,8 @@ export default class HomeScreen extends Component {
         value: championDays,
         unit: 'days'
       },
-      rightSideImageStack: rightSideImageStack
+      rightSideImageStack: rightSideImageStack, 
+      rightSideLabel: item.item.totomlPythonSDKVersion
     }
 
   }
