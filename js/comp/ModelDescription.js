@@ -1,5 +1,5 @@
 import React, { Component } from 'react';
-import { Text, View, StyleSheet, TouchableOpacity, Modal, TextInput } from 'react-native';
+import { Text, View, StyleSheet, TouchableOpacity, Modal, TextInput, KeyboardAvoidingView } from 'react-native';
 import TRC from 'toto-react-components';
 import TotoMLRegistryAPI from '../services/TotoMLRegistryAPI';
 import * as config from '../Config';
@@ -77,7 +77,7 @@ export default class ModelDescription extends Component {
                 {descText}
 
                 <Modal animationType="slide" transparent={false} visible={this.state.modalVisible}>
-                    <View style={styles.modalContainer}>
+                    <KeyboardAvoidingView behavior='padding' style={styles.modalContainer}>
                         <View style={styles.modalDescContainer}>
                             <TextInput autoFocus={true} multiline={true} style={styles.textInput} placeholder="Insert the description here" onChangeText={ (text) => {this.setState({ newDescription: text })} }/>
                         </View>
@@ -85,7 +85,7 @@ export default class ModelDescription extends Component {
                             <TRC.TotoIconButton image={require('TotoML/img/tick.png')} onPress={ this.saveDescription } />
                             <TRC.TotoIconButton image={require('TotoML/img/cross.png')} onPress={() => { this.setState({ modalVisible: false }) }} />
                         </View>
-                    </View>
+                    </KeyboardAvoidingView>
                 </Modal>
             </TouchableOpacity>
         )
